@@ -1,3 +1,33 @@
 from django.db import models
+from user.models import User
 
-# Create your models here.
+
+class Tag(models.Model):
+    id = models.BigAutoField(primary_key=True, unique=True)
+    name = models.CharField(max_length=100, unique=True)
+
+    def __unicode__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
+
+class Repository(models.Model):
+    id = models.BigAutoField(primary_key=True, unique=True)
+    name = models.CharField(max_length=100)
+    owners = models.ManyToManyField(User, related_name="repositories")
+    members = models.ManyToManyField(
+        User, related_name="repositories_member", blank=True
+    )
+    path = models.CharField(max_length=100, unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+    tags = models.ManyToManyField(Tag, blank=True)
+    star_count = models.IntegerField(default=0)
+    fork_count = models.IntegerField(default=0)
+
+    def __unicode__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
