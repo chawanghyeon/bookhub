@@ -1,0 +1,15 @@
+__pycache__
+.vscode
+db.sqlite3
+.pre-commit-config.yaml
+.isort.cfg
+*.mp3
+media
+Babble-Frontend
+.yaml
+.env
+.yml
+.conf
+.config
+migrations
+logs
