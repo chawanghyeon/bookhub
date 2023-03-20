@@ -134,9 +134,6 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.CursorPagination",
     "PAGE_SIZE": 5,
@@ -173,49 +170,9 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-# CHANNEL_LAYERS = {
-#     "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
-# }
-
 if DEBUG:
     MIDDLEWARE += [
         "querycount.middleware.QueryCountMiddleware",
     ]
 
-
-# LOGGING = {
-#     "version": 1,
-#     "disable_existing_loggers": False,
-#     "formatters": {
-#         "json": {
-#             "()": "core.utils.JsonFormatter",
-#         }
-#     },
-#     "handlers": {
-#         "logstash": {
-#             "level": "INFO",
-#             "class": "logstash.TCPLogstashHandler",
-#             "host": "localhost",  # Replace with the IP or hostname of your Logstash server
-#             "port": 50000,  # This is the default port that Logstash listens on
-#             "version": 1,
-#             "formatter": "json",
-#         },
-#         "console": {
-#             "class": "logging.StreamHandler",
-#         },
-#     },
-#     "loggers": {
-#         "django": {
-#             "handlers": ["console"],
-#             "level": "INFO",
-#         },
-#         "": {
-#             "handlers": ["logstash", "console"],
-#             "level": "INFO",
-#         },
-#         # "django.db.backends": {
-#         #     "handlers": ["console"],
-#         #     "level": "DEBUG",
-#         # },
-#     },
-# }
+REPOSITORY_ROOT = os.path.join(BASE_DIR, "root")
