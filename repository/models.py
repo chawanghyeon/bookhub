@@ -1,4 +1,5 @@
 from django.db import models
+
 from user.models import User
 
 
@@ -16,6 +17,9 @@ class Tag(models.Model):
 class Repository(models.Model):
     id = models.BigAutoField(primary_key=True, unique=True)
     name = models.CharField(max_length=100)
+    superuser = models.ForeignKey(
+        User, related_name="repositories_superuser", on_delete=models.CASCADE
+    )
     owners = models.ManyToManyField(User, related_name="repositories")
     members = models.ManyToManyField(
         User, related_name="repositories_member", blank=True

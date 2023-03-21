@@ -156,7 +156,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
-    "TOKEN_USER_CLASS": "users.models.User",
+    "TOKEN_USER_CLASS": "user.models.User",
 }
 
 CORS_ALLOWED_CREDENTIALS = True
@@ -175,4 +175,4 @@ if DEBUG:
         "querycount.middleware.QueryCountMiddleware",
     ]
 
-REPOSITORY_ROOT = os.path.join(BASE_DIR, "root")
+REPO_ROOT = os.path.join(BASE_DIR, "root")
