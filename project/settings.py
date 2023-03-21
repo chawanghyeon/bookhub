@@ -33,7 +33,6 @@ ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 # Application definition
 
 INSTALLED_APPS = [
-    "auth.apps.AuthConfig",
     "user.apps.UserConfig",
     "repository.apps.RepositoryConfig",
     "django.contrib.admin",
@@ -147,7 +146,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
-        "auth.permissions.IsOwnerOrReadOnly",
+        "user.permissions.IsOwnerOrReadOnly",
     ],
 }
 

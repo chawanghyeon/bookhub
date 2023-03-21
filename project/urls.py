@@ -23,7 +23,6 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
-from auth.views import AuthViewSet
 from collaboration.views import CollaborationViewSet
 from fork.views import ForkViewSet
 from repository.views import RepositoryViewSet
@@ -32,7 +31,6 @@ from user.views import UserViewSet
 
 router = DefaultRouter()
 router.register(r"user", UserViewSet, basename="user")
-router.register(r"auth", AuthViewSet, basename="auth")
 router.register(r"repository", RepositoryViewSet, basename="repository")
 router.register(r"collaboration", CollaborationViewSet, basename="collaboration")
 router.register(r"fork", ForkViewSet, basename="fork")
