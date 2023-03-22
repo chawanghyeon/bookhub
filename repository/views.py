@@ -238,3 +238,27 @@ class RepositoryViewSet(viewsets.ModelViewSet):
         return pagenator.get_paginated_response(
             RepositorySerializer(query, many=True).data
         )
+
+    @action(detail=True, methods=["patch"], url_path="name", url_name="name")
+    def update_name(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+        repository = Repository.objects.get(pk=pk)
+        repo = Repo(repository.path)
+        old_name = request.data.get("old_name", None)
+        new_name = request.data.get("new_name", None)
+        message = request.data.get("message", None)
+
+        if old_name is None or new_name is None:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        folder_path = os.path.join(repository.path, old_name)
+        new_folder_path = os.path.join(repository.path, new_name)
+
+        os.rename(folder_path, new_folder_path)
+
+        index = repo.index
+        index.add([new_name])
+        index.commit(message)
+
+        return Response(status=status.HTTP_200_OK)

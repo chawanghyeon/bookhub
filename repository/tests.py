@@ -213,3 +213,25 @@ class RepositoryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
         self.assertEqual(response.data["results"][0]["name"], "test_repo1")
+
+    def test_update_name(self):
+        repository = Repository.objects.create(
+            name="test_repo",
+            superuser=self.user1,
+            path=os.path.join(REPO_ROOT, "test_repo"),
+        )
+
+        data = {
+            "old_name": "README.txt",
+            "new_name": "AFTER.txt",
+            "message": "test_update",
+        }
+        response = self.client.patch(
+            reverse("repository-name", args=[repository.id]),
+            data,
+            format="json",
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(os.path.exists(os.path.join(repository.path, "AFTER.txt")))
