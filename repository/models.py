@@ -29,6 +29,7 @@ class Repository(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
     star_count = models.IntegerField(default=0)
     fork_count = models.IntegerField(default=0)
+    private = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.name

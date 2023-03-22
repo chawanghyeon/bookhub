@@ -1,9 +1,11 @@
 import json
 import os
+import shutil
 from typing import Optional
 
 from django.db import transaction
 from django.http import Http404, HttpRequest
+from git.exc import GitCommandError
 from git.repo import Repo
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -23,26 +25,28 @@ class RepositoryViewSet(viewsets.ModelViewSet):
     def create(self, request: HttpRequest) -> Response:
         name = request.data.get("name")
         repo_dir = os.path.join(REPO_ROOT, name)
+        file_name = os.path.join(repo_dir, "README.txt")
         repo = Repo.init(repo_dir)
+        open(
+            file_name,
+            "w",
+        ).close()
+        repo.index.add("*")
+        repo.index.commit("initial commit")
 
-        # Set the owner of the repository to the current user
-        repo.config_writer().set_value("user", "name", request.user.username)
-        repo.config_writer().set_value("user", "email", request.user.email)
-        repo.config_writer().release()
+        config_writer = repo.config_writer()
+        config_writer.set_value("user", "name", request.user.username)
+        config_writer.release()
 
         repository = Repository.objects.create(
             name=name,
-            repo_dir=repo.working_tree_dir,
+            path=repo.working_tree_dir,
             superuser=request.user,
-            owners=[request.user],
         )
+        repository.owners.set([request.user])
 
-        commits = list(repo.iter_commits())
+        tree = list(repo.iter_commits())[0].tree
 
-        # Get the tree object for the most recent commit
-        tree = commits[0].tree
-
-        # Recursively print the structure of the tree
         def build_tree_dict(tree):
             result = {}
             for item in tree:
@@ -52,44 +56,144 @@ class RepositoryViewSet(viewsets.ModelViewSet):
                     result[item.name] = build_tree_dict(item)
             return result
 
-        # Convert the tree dictionary to a JSON string
         tree_dict = build_tree_dict(tree)
-        tree_json = json.dumps(tree_dict, indent=4)
+        tree_json = json.dumps(tree_dict)
 
-        serializer = self.get_serializer(repository)
-        data = serializer.data
+        data = RepositorySerializer(repository).data
         data["tree"] = tree_json
 
         return Response(data, status=status.HTTP_201_CREATED)
 
     def retrieve(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
-        repo = self.get_object()
-        serializer = self.get_serializer(repo)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        repository = Repository.objects.get(pk=pk)
+        if repository.private:
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        repo = Repo(repository.path)
 
-    def update(self, request: HttpRequest) -> Response:
-        repo = self.get_object()
+        commits = list(repo.iter_commits())
+        tree = commits[0].tree
 
-        # Update the repository name if it was provided in the request data
-        name = request.data.get("name")
-        if name:
-            new_repo_dir = os.path.join(REPO_ROOT, name)
-            os.rename(repo.repo_dir, new_repo_dir)
-            repo.repo_dir = new_repo_dir
+        def build_tree_dict(tree):
+            result = {}
+            for item in tree:
+                if item.type == "blob":
+                    result[item.name] = "blob"
+                elif item.type == "tree":
+                    result[item.name] = build_tree_dict(item)
+            return result
 
-        # Update the owner of the repository if it was provided in the request data
-        owner = request.data.get("owner")
-        if owner:
-            repo.owner = owner
+        tree_dict = build_tree_dict(tree)
+        tree_json = json.dumps(tree_dict)
 
-        repo.save()
+        data = RepositorySerializer(repository).data
+        data["tree"] = tree_json
 
-        serializer = self.get_serializer(repo)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
-    def destroy(self, request: HttpRequest) -> Response:
-        repo = self.get_object()
-        repo.repo_dir.rmtree()
+    @action(detail=True, methods=["patch"], url_path="file", url_name="file")
+    def partial_update_file(
+        self, request: HttpRequest, pk: Optional[str] = None
+    ) -> Response:
+        repository = Repository.objects.get(pk=pk)
+        txt_file = request.data.get("file", None)
+        message = request.data.get("message", None)
+
+        if txt_file is not None:
+            # read the contents of the uploaded file
+            content = txt_file.read()
+            file_name = txt_file.name
+            file_path = None
+
+            try:
+                repo = Repo(repository.path)
+                for file_path in repo.git.ls_files().split("\n"):
+                    if file_path.endswith(file_name):
+                        file_path = file_path
+                        break
+
+                file_path = os.path.join(repository.path, file_path)
+
+                with open(file_path, "w") as f:
+                    f.write(content.decode("utf-8"))
+
+                index = repo.index
+                index.add([file_name])
+                index.commit(message)
+
+            except GitCommandError:
+                return Response(
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        return Response(status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["patch"], url_path="structure", url_name="structure")
+    def partial_update_structure(
+        self, request: HttpRequest, pk: Optional[str] = None
+    ) -> Response:
+        repository = Repository.objects.get(pk=pk)
+        repo = Repo(repository.path)
+        structure = request.data.get("structure", None)
+        message = request.data.get("message", None)
+
+        if structure is None:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        blobs_dict = {}
+        for file_path in repo.git.ls_files().split("\n"):
+            file_path = os.path.join(repository.path, file_path)
+            with open(file_path, "r") as f:
+                blobs_dict[os.path.basename(file_path)] = f.read()
+
+        contents = os.listdir(repository.path)
+        contents.remove(".git")
+
+        for item in contents:
+            item_path = os.path.join(repository.path, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+        structure = json.loads(structure)
+
+        def build_tree(tree, path):
+            for item in tree:
+                if tree[item] == "blob":
+                    file_path = os.path.join(path, item)
+                    if item in blobs_dict:
+                        with open(file_path, "w") as f:
+                            f.write(blobs_dict[item])
+                    else:
+                        open(
+                            file_path,
+                            "w",
+                        ).close()
+                else:
+                    dir_path = os.path.join(path, item)
+                    os.mkdir(dir_path)
+                    build_tree(tree[item], dir_path)
+
+        build_tree(structure, repository.path)
+
+        index = repo.index
+        index.add("*")
+        index.commit(message)
+
+        return Response(status=status.HTTP_200_OK)
+
+    def destroy(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+        repository = Repository.objects.get(pk=pk)
+        if repository.superuser != request.user:
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        repository.delete()
+        shutil.rmtree(repository.path)
         return Response(status=status.HTTP_200_OK)
 
     def list(self, request: HttpRequest) -> Response:
@@ -105,12 +209,27 @@ class RepositoryViewSet(viewsets.ModelViewSet):
             RepositorySerializer(query, many=True).data
         )
 
-    @action(detail=False, methods=["get"])
-    def search(self, request: HttpRequest) -> Response:
+    @action(detail=False, methods=["get"], url_path="tag", url_name="tag")
+    def search_by_tag(self, request: HttpRequest) -> Response:
         pagenator = CursorPagination()
 
         tag = request.query_params.get("tag")
         query = Repository.objects.filter(tags__name=tag).order_by("star_count")
+        query = pagenator.paginate_queryset(query, request)
+
+        if query is None:
+            raise Http404
+
+        return pagenator.get_paginated_response(
+            RepositorySerializer(query, many=True).data
+        )
+
+    @action(detail=False, methods=["get"], url_path="name", url_name="name")
+    def search_by_name(self, request: HttpRequest) -> Response:
+        pagenator = CursorPagination()
+
+        name = request.query_params.get("name")
+        query = Repository.objects.filter(name__icontains=name).order_by("star_count")
         query = pagenator.paginate_queryset(query, request)
 
         if query is None:
