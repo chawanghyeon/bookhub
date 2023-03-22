@@ -262,3 +262,22 @@ class RepositoryViewSet(viewsets.ModelViewSet):
         index.commit(message)
 
         return Response(status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="branch", url_name="branch")
+    def create_branch(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+        repository = Repository.objects.get(pk=pk)
+        repo = Repo(repository.path)
+        branch_name = request.data.get("branch_name", None)
+        message = request.data.get("message", None)
+
+        if branch_name is None:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        repo.git.checkout("-b", branch_name)
+        index = repo.index
+        index.add("*")
+        index.commit(message)
+
+        return Response(status=status.HTTP_201_CREATED)
