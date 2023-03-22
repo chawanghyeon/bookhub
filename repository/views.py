@@ -239,7 +239,7 @@ class RepositoryViewSet(viewsets.ModelViewSet):
             RepositorySerializer(query, many=True).data
         )
 
-    @action(detail=True, methods=["patch"], url_path="name", url_name="name")
+    @action(detail=True, methods=["patch"], url_path="rename", url_name="rename")
     def update_name(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
         repository = Repository.objects.get(pk=pk)
         repo = Repo(repository.path)
@@ -281,3 +281,34 @@ class RepositoryViewSet(viewsets.ModelViewSet):
         index.commit(message)
 
         return Response(status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["delete"], url_path="branch", url_name="branch")
+    def delete_branch(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+        print("delete_branch")
+        repository = Repository.objects.get(pk=pk)
+        repo = Repo(repository.path)
+        branch_name = request.data.get("branch_name", None)
+
+        if branch_name is None:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if branch_name == "master":
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if branch_name not in repo.git.branch():
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if branch_name == repo.active_branch.name:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        repo.git.branch("-D", branch_name)
+
+        return Response(status=status.HTTP_200_OK)

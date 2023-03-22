@@ -39,6 +39,11 @@ router.register(r"star", StarViewSet, basename="star")
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include(router.urls)),
+    path(
+        "repositories/<int:pk>/branch/",
+        RepositoryViewSet.as_view({"post": "create_branch", "delete": "delete_branch"}),
+        name="repository-branch",
+    ),
 ]
 
 # swagger

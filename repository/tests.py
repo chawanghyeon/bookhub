@@ -227,7 +227,7 @@ class RepositoryViewSetTestCase(APITestCase):
             "message": "test_update",
         }
         response = self.client.patch(
-            reverse("repository-name", args=[repository.id]),
+            reverse("repository-rename", args=[repository.id]),
             data,
             format="json",
             HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
@@ -253,6 +253,56 @@ class RepositoryViewSetTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(
+            os.path.exists(
+                os.path.join(repository.path, ".git", "refs", "heads", "test_branch")
+            )
+        )
+
+    def test_destory_branch(self):
+        repository = Repository.objects.create(
+            name="test_repo",
+            superuser=self.user1,
+            path=os.path.join(REPO_ROOT, "test_repo"),
+        )
+
+        data = {"branch_name": "test_branch", "message": "test_create_branch"}
+        response = self.client.post(
+            reverse("repository-branch", args=[repository.id]),
+            data,
+            format="json",
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(repository.path, ".git", "refs", "heads", "test_branch")
+            )
+        )
+
+        data = {"branch_name": "test_branch", "message": "test_delete_branch"}
+
+        response = self.client.delete(
+            reverse("repository-branch", args=[repository.id]),
+            data,
+            format="json",
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        repo = Repo(repository.path)
+        repo.git.checkout("master")
+
+        response = self.client.delete(
+            reverse("repository-branch", args=[repository.id]),
+            data,
+            format="json",
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
             os.path.exists(
                 os.path.join(repository.path, ".git", "refs", "heads", "test_branch")
             )
