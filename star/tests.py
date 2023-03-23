@@ -1,8 +1,11 @@
+import os
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from project.settings import REPO_ROOT
 from repository.models import Repository
 from star.models import Star
 from user.models import User
@@ -13,7 +16,11 @@ class StarViewSetTestCase(APITestCase):
         self.user1 = User.objects.create_user(
             username="user1", password="user1_password"
         )
-        self.repository = Repository.objects.create(user=self.user1)
+        self.repository = Repository.objects.create(
+            name="test_reop",
+            superuser=self.user1,
+            path=os.path.join(REPO_ROOT, self.user1.username, "test_repo"),
+        )
         self.user1_token = RefreshToken.for_user(self.user1)
 
     def test_create_star(self):

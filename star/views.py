@@ -22,7 +22,7 @@ class StarViewSet(viewsets.ModelViewSet):
         repository_id = request.data.get("repository")
         serializer = StarSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(repository_id=repository_id, user__id=request.user.id)
+        serializer.save(repository_id=repository_id, user_id=request.user.id)
 
         Repository.objects.filter(id=repository_id).update(
             star_count=F("star_count") + 1
