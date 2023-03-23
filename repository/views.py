@@ -378,3 +378,20 @@ class RepositoryViewSet(viewsets.ModelViewSet):
 
         working_tree.append(commit_date)
         return Response(working_tree, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"], url_path="commit", url_name="commit")
+    def list_commits(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+        repository = Repository.objects.get(pk=pk)
+        repo = Repo(repository.path)
+        commit_list = []
+
+        for commit in repo.iter_commits():
+            commit_list.append(
+                {
+                    "commit_hash": commit.hexsha,
+                    "commit_date": commit.committed_datetime,
+                    "commit_message": commit.message,
+                }
+            )
+
+        return Response(commit_list, status=status.HTTP_200_OK)
