@@ -335,3 +335,13 @@ class RepositoryViewSet(viewsets.ModelViewSet):
         index.commit(message)
 
         return Response(status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"], url_path="branch", url_name="branch")
+    def list_branches(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+        repository = Repository.objects.get(pk=pk)
+        repo = Repo(repository.path)
+
+        branch_list = repo.git.branch().split("\n")
+        branch_list = [branch.strip() for branch in branch_list]
+
+        return Response(branch_list, status=status.HTTP_200_OK)

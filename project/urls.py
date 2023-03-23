@@ -46,6 +46,7 @@ urlpatterns = [
                 "post": "create_branch",
                 "delete": "delete_branch",
                 "patch": "update_branch",
+                "get": "list_branches",
             }
         ),
         name="repository-branch",
