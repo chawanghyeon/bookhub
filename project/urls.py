@@ -41,7 +41,13 @@ urlpatterns = [
     path("", include(router.urls)),
     path(
         "repositories/<int:pk>/branch/",
-        RepositoryViewSet.as_view({"post": "create_branch", "delete": "delete_branch"}),
+        RepositoryViewSet.as_view(
+            {
+                "post": "create_branch",
+                "delete": "delete_branch",
+                "patch": "update_branch",
+            }
+        ),
         name="repository-branch",
     ),
 ]

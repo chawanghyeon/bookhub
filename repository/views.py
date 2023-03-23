@@ -284,7 +284,6 @@ class RepositoryViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["delete"], url_path="branch", url_name="branch")
     def delete_branch(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
-        print("delete_branch")
         repository = Repository.objects.get(pk=pk)
         repo = Repo(repository.path)
         branch_name = request.data.get("branch_name", None)
@@ -310,5 +309,29 @@ class RepositoryViewSet(viewsets.ModelViewSet):
             )
 
         repo.git.branch("-D", branch_name)
+
+        return Response(status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["patch"], url_path="branch", url_name="branch")
+    def update_branch(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+        repository = Repository.objects.get(pk=pk)
+        repo = Repo(repository.path)
+        branch_name = request.data.get("branch_name", None)
+        message = request.data.get("message", None)
+
+        if branch_name is None:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if branch_name not in repo.git.branch():
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        repo.git.checkout(branch_name)
+        index = repo.index
+        index.add("*")
+        index.commit(message)
 
         return Response(status=status.HTTP_200_OK)
