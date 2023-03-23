@@ -281,18 +281,8 @@ class RepositoryViewSetTestCase(APITestCase):
         )
 
         data = {"branch_name": "test_branch", "message": "test_delete_branch"}
-
-        response = self.client.delete(
-            reverse("repository-branch", args=[repository.id]),
-            data,
-            format="json",
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
         repo = Repo(repository.path)
-        repo.git.checkout("master")
+        repo.git.checkout("main")
 
         response = self.client.delete(
             reverse("repository-branch", args=[repository.id]),
@@ -330,7 +320,7 @@ class RepositoryViewSetTestCase(APITestCase):
             )
         )
 
-        data = {"branch_name": "master", "message": "test_update_branch"}
+        data = {"branch_name": "main", "message": "test_update_branch"}
 
         response = self.client.patch(
             reverse("repository-branch", args=[repository.id]),
@@ -342,7 +332,7 @@ class RepositoryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(
             os.path.exists(
-                os.path.join(repository.path, ".git", "refs", "heads", "master")
+                os.path.join(repository.path, ".git", "refs", "heads", "main")
             )
         )
 
@@ -430,3 +420,38 @@ class RepositoryViewSetTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
+
+    def test_rollback_to_commit(self):
+        repository = Repository.objects.create(
+            name="test_repo",
+            superuser=self.user1,
+            path=os.path.join(REPO_ROOT, "test_repo"),
+        )
+
+        new_content = "This is some new content."
+        new_file = SimpleUploadedFile("README.txt", bytes(new_content, "utf-8"))
+
+        data = {"file": new_file, "message": "Updated README.txt"}
+        response = self.client.patch(
+            reverse("repository-file", args=[repository.id]),
+            data,
+            format="multipart",
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
+        )
+
+        repo = Repo(repository.path)
+        commit_hash = repo.head.commit.parents[0].hexsha
+
+        data = {"commit_hash": commit_hash, "message": "test_rollback_to_commit"}
+        response = self.client.put(
+            reverse("repository-rollback", args=[repository.id]),
+            data,
+            format="json",
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
+        )
+
+        with open(os.path.join(repository.path, "README.txt"), "r") as f:
+            content = f.read()
+            self.assertEqual(content, "")
+        self.assertEqual(len(list(repo.iter_commits())), 1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

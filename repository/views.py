@@ -395,3 +395,20 @@ class RepositoryViewSet(viewsets.ModelViewSet):
             )
 
         return Response(commit_list, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["put"], url_path="rollback", url_name="rollback")
+    def rollback_to_commit(
+        self, request: HttpRequest, pk: Optional[str] = None
+    ) -> Response:
+        repository = Repository.objects.get(pk=pk)
+        repo = Repo(repository.path)
+        commit_hash = request.data.get("commit_hash", None)
+
+        if commit_hash is None:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        repo.git.reset("--hard", commit_hash)
+
+        return Response(status=status.HTTP_200_OK)
