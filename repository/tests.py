@@ -375,3 +375,32 @@ class RepositoryViewSetTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
+
+    def test_retrieve_working_tree(self):
+        repository = Repository.objects.create(
+            name="test_repo",
+            superuser=self.user1,
+            path=os.path.join(REPO_ROOT, "test_repo"),
+        )
+
+        new_content = "This is some new content."
+        new_file = SimpleUploadedFile("README.txt", bytes(new_content, "utf-8"))
+
+        data = {"file": new_file, "message": "Updated README.txt"}
+        response = self.client.patch(
+            reverse("repository-file", args=[repository.id]),
+            data,
+            format="multipart",
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
+        )
+
+        repo = Repo(repository.path)
+        commit_hash = repo.head.commit.hexsha
+
+        response = self.client.get(
+            reverse("repository-workingtree", args=[repository.id])
+            + f"?commit_hash={commit_hash}",
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

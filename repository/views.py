@@ -345,3 +345,36 @@ class RepositoryViewSet(viewsets.ModelViewSet):
         branch_list = [branch.strip() for branch in branch_list]
 
         return Response(branch_list, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True, methods=["get"], url_path="workingtree", url_name="workingtree"
+    )
+    def retrieve_working_tree(
+        self, request: HttpRequest, pk: Optional[str] = None
+    ) -> Response:
+        commit_hash = request.query_params.get("commit_hash", None)
+        repository = Repository.objects.get(pk=pk)
+        repo = Repo(repository.path)
+
+        if commit_hash is None:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        head_commit = repo.commit(commit_hash)
+        commit_date = head_commit.committed_datetime
+        head_tree = head_commit.tree
+        parent_commit = head_commit.parents[0]
+        parent_tree = parent_commit.tree
+
+        diff_index = parent_tree.diff(head_tree)
+        working_tree = []
+
+        for diff in diff_index:
+            a_blob = diff.a_blob
+            b_blob = diff.b_blob
+            if a_blob and b_blob:
+                working_tree.append(repo.git.diff(a_blob.hexsha, b_blob.hexsha))
+
+        working_tree.append(commit_date)
+        return Response(working_tree, status=status.HTTP_200_OK)
