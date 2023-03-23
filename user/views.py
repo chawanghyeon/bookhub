@@ -19,7 +19,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if user_id is None:
             user = request.user
         else:
-            user = User.objects.get_or_404(id=user_id)
+            user = User.objects.get(id=user_id)
 
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
 

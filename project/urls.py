@@ -27,7 +27,7 @@ from collaboration.views import CollaborationViewSet
 from fork.views import ForkViewSet
 from repository.views import RepositoryViewSet
 from star.views import StarViewSet
-from user.views import UserViewSet
+from user.views import AuthViewSet, UserViewSet
 
 router = DefaultRouter()
 router.register(r"user", UserViewSet, basename="user")
@@ -35,6 +35,7 @@ router.register(r"repository", RepositoryViewSet, basename="repository")
 router.register(r"collaboration", CollaborationViewSet, basename="collaboration")
 router.register(r"fork", ForkViewSet, basename="fork")
 router.register(r"star", StarViewSet, basename="star")
+router.register(r"auth", AuthViewSet, basename="auth")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
