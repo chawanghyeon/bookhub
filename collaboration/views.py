@@ -119,6 +119,12 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         self, request: HttpRequest, pk: Optional[str] = None
     ) -> Response:
         pull_request = PullRequest.objects.get(pk=pk)
+
+        if pull_request.target_repository.superuser != request.user:
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         pull_request.status = "merged"
         pull_request.save()
 
