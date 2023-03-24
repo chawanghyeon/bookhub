@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from collaboration.models import Comment
+from collaboration.models import Comment, PullRequest
 from fork.models import Fork
 from project.settings import REPO_ROOT
 from repository.models import Repository
@@ -215,3 +215,26 @@ class PullRequestViewSetTestCase(APITestCase):
         }
         response = self.client.post(reverse("pullrequest-list"), data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_destory_pull_request(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
+        )
+        data = {
+            "source_branch": "main",
+            "target_branch": "main",
+            "source_repository": self.fork.source_repository.id,
+            "target_repository": self.fork.target_repository.id,
+            "title": "test pull request",
+            "text": "test pull request",
+            "status": "open",
+            "user": self.user2.id,
+        }
+        response = self.client.post(reverse("pullrequest-list"), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        pull_request = PullRequest.objects.first()
+        response = self.client.delete(
+            reverse("pullrequest-detail", args=[pull_request.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(PullRequest.objects.count(), 0)

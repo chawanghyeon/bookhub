@@ -75,3 +75,10 @@ class PullRequestViewSet(viewsets.ModelViewSet):
             serializer.data,
             status=status.HTTP_201_CREATED,
         )
+
+    def destroy(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+        PullRequest.objects.filter(pk=pk).delete()
+
+        return Response(
+            status=status.HTTP_200_OK,
+        )
