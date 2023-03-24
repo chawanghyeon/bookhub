@@ -59,3 +59,17 @@ class CommentViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Comment.objects.count(), 1)
         self.assertEqual(Comment.objects.first().text, "test comment")
+
+    def test_create_comment_without_commit(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
+        )
+        response = self.client.post(
+            reverse("comment-list"),
+            {
+                "text": "test comment",
+                "repository": self.repo.id,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Comment.objects.count(), 0)
