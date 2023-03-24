@@ -27,7 +27,7 @@ class CommentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        Comment.objects.create(
+        comment = Comment.objects.create(
             user=request.user,
             repository_id=repository_id,
             commit=commit_hash,
@@ -35,6 +35,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         )
 
         return Response(
+            CommentSerializer(comment).data,
             status=status.HTTP_201_CREATED,
         )
 
