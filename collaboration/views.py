@@ -2,7 +2,9 @@ from typing import Optional
 
 from django.db import transaction
 from django.http import HttpRequest
+from git.repo import Repo
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from collaboration.models import Comment, PullRequest
@@ -80,5 +82,35 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         PullRequest.objects.filter(pk=pk).delete()
 
         return Response(
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=["post"], url_path="check", url_name="check")
+    def check_difference(
+        self, request: HttpRequest, pk: Optional[str] = None
+    ) -> Response:
+        pulllrequest = PullRequest.objects.get(pk=pk)
+        source_repository = pulllrequest.source_repository
+        target_repository = pulllrequest.target_repository
+
+        source_repo = Repo(source_repository.path)
+        target_repo = Repo(target_repository.path)
+
+        source_commit = source_repo.head.commit
+        source_tree = source_commit.tree
+        target_commit = target_repo.commit(pulllrequest.commit)
+        target_tree = target_commit.tree
+
+        diff_index = target_tree.diff(source_tree)
+        working_tree = []
+
+        for diff in diff_index:
+            a_blob = diff.a_blob
+            b_blob = diff.b_blob
+            if a_blob and b_blob:
+                working_tree.append(target_repo.git.diff(a_blob.hexsha, b_blob.hexsha))
+
+        return Response(
+            working_tree,
             status=status.HTTP_200_OK,
         )

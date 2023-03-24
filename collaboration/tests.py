@@ -190,16 +190,6 @@ class PullRequestViewSetTestCase(APITestCase):
         self.client.credentials(
             HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
         )
-        data = {
-            "source_branch": "main",
-            "target_branch": "main",
-            "source_repository": self.fork.source_repository.id,
-            "target_repository": self.fork.target_repository.id,
-            "title": "test pull request",
-            "text": "test pull request",
-            "status": "open",
-            "user": self.user2.id,
-        }
 
         with open(
             os.path.join(REPO_ROOT, self.user2.username, "test_repo", "README.txt"), "w"
@@ -209,6 +199,17 @@ class PullRequestViewSetTestCase(APITestCase):
         repo = Repo(self.repo2.path)
         repo.index.add(["*"])
         repo.index.commit("test commit")
+        data = {
+            "source_branch": "main",
+            "target_branch": "main",
+            "source_repository": self.fork.source_repository.id,
+            "target_repository": self.fork.target_repository.id,
+            "title": "test pull request",
+            "text": "test pull request",
+            "status": "open",
+            "user": self.user2.id,
+            "commit": repo.head.commit.hexsha,
+        }
 
         remote = repo.remote(name="origin")
         remote.push(refspec=f"refs/heads/new-branch-name:refs/heads/new-branch-name")
@@ -233,6 +234,7 @@ class PullRequestViewSetTestCase(APITestCase):
             "text": "test pull request",
             "status": "open",
             "user": self.user2.id,
+            "commit": "test",
         }
         response = self.client.post(reverse("pullrequest-list"), data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -250,6 +252,7 @@ class PullRequestViewSetTestCase(APITestCase):
             "text": "test pull request",
             "status": "open",
             "user": self.user2.id,
+            "commit": "test",
         }
         response = self.client.post(reverse("pullrequest-list"), data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -259,3 +262,43 @@ class PullRequestViewSetTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(PullRequest.objects.count(), 0)
+
+    def test_check_difference(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
+        )
+
+        with open(
+            os.path.join(REPO_ROOT, self.user2.username, "test_repo", "README.txt"), "w"
+        ) as f:
+            f.write("test")
+
+        repo = Repo(self.repo2.path)
+        repo.index.add(["*"])
+        repo.index.commit("test commit")
+        data = {
+            "source_branch": "main",
+            "target_branch": "main",
+            "source_repository": self.fork.source_repository.id,
+            "target_repository": self.fork.target_repository.id,
+            "title": "test pull request",
+            "text": "test pull request",
+            "status": "open",
+            "user": self.user2.id,
+            "commit": repo.head.commit.hexsha,
+        }
+
+        remote = repo.remote(name="origin")
+        remote.push(refspec=f"refs/heads/new-branch-name:refs/heads/new-branch-name")
+
+        response = self.client.post(reverse("pullrequest-list"), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(PullRequest.objects.first().title, "test pull request")
+        self.assertTrue(
+            Repo(self.fork.target_repository.path).active_branch.name, "new-branch-name"
+        )
+
+        response = self.client.post(reverse("pullrequest-check", args=[1]), data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue("test" in str(response.data))
