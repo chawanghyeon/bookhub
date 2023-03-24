@@ -27,12 +27,12 @@ class ForkViewSet(viewsets.ModelViewSet):
             REPO_ROOT, request.user.username, source_repository.name
         )
 
-        shutil.copytree(source_dir, target_dir)
-        shutil.rmtree(os.path.join(target_dir, ".git"))
-
-        repo = Repo.init(target_dir)
-        repo.index.add(["*"])
-        repo.index.commit("initial commit")
+        repo = Repo.clone_from(source_dir, target_dir, bare=True)
+        remote = repo.create_remote("source", url="file://" + source_dir)
+        remote.fetch()
+        branch_name = "new-branch-name"
+        repo.create_head(branch_name)
+        remote.push(refspec=f"refs/heads/{branch_name}:refs/heads/{branch_name}")
 
         target_repository = Repository.objects.create(
             name=source_repository.name,

@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from fork.models import Fork
 from project.settings import REPO_ROOT
 from repository.models import Repository
 from user.models import User
@@ -48,15 +49,19 @@ class ForkViewSetTestCase(APITestCase):
             data,
             HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
         )
-
+        fork = Fork.objects.get(user=self.user1, source_repository=self.repo)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(self.repo.source_fork.count(), 1)
-        self.assertEqual(self.repo.source_fork.first().user, self.user1)
-        self.assertEqual(self.repo.source_fork.first().source_repository, self.repo)
+        self.assertEqual(fork.user, self.user1)
+        self.assertEqual(fork.source_repository, self.repo)
         self.assertTrue(
             os.path.exists(os.path.join(REPO_ROOT, self.user1.username, "test_repo"))
         )
         self.assertEqual(Repository.objects.count(), 2)
+        self.assertTrue(Repo(fork.target_repository.path).bare)
+        self.assertTrue(
+            Repo(fork.target_repository.path).remotes.source.url.startswith("file://")
+        )
 
     def test_delete(self):
         data = {"repository": self.repo.id}
