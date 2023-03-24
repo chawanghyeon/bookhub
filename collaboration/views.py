@@ -89,16 +89,14 @@ class PullRequestViewSet(viewsets.ModelViewSet):
     def check_difference(
         self, request: HttpRequest, pk: Optional[str] = None
     ) -> Response:
-        pulllrequest = PullRequest.objects.get(pk=pk)
-        source_repository = pulllrequest.source_repository
-        target_repository = pulllrequest.target_repository
+        pull_request = PullRequest.objects.get(pk=pk)
 
-        source_repo = Repo(source_repository.path)
-        target_repo = Repo(target_repository.path)
+        target_repo = Repo(pull_request.target_repository.path)
+        source_repo = Repo(pull_request.source_repository.path)
 
         source_commit = source_repo.head.commit
         source_tree = source_commit.tree
-        target_commit = target_repo.commit(pulllrequest.commit)
+        target_commit = target_repo.head.commit
         target_tree = target_commit.tree
 
         diff_index = target_tree.diff(source_tree)
@@ -112,5 +110,23 @@ class PullRequestViewSet(viewsets.ModelViewSet):
 
         return Response(
             working_tree,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=["post"], url_path="approve", url_name="approve")
+    @transaction.atomic
+    def approve_pull_request(
+        self, request: HttpRequest, pk: Optional[str] = None
+    ) -> Response:
+        pull_request = PullRequest.objects.get(pk=pk)
+        pull_request.status = "merged"
+        pull_request.save()
+
+        target_repo = Repo(pull_request.target_repository.path)
+        Repo(pull_request.source_repository.path)
+
+        target_repo.git.merge(pull_request.commit)
+
+        return Response(
             status=status.HTTP_200_OK,
         )

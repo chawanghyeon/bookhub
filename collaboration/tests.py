@@ -53,8 +53,8 @@ class CommentViewSetTestCase(APITestCase):
             reverse("comment-list"),
             {
                 "text": "test comment",
-                "commit": commit_hash,
                 "repository": self.repo.id,
+                "commit": commit_hash,
             },
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -208,7 +208,6 @@ class PullRequestViewSetTestCase(APITestCase):
             "text": "test pull request",
             "status": "open",
             "user": self.user2.id,
-            "commit": repo.head.commit.hexsha,
         }
 
         remote = repo.remote(name="origin")
@@ -234,7 +233,6 @@ class PullRequestViewSetTestCase(APITestCase):
             "text": "test pull request",
             "status": "open",
             "user": self.user2.id,
-            "commit": "test",
         }
         response = self.client.post(reverse("pullrequest-list"), data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -252,7 +250,6 @@ class PullRequestViewSetTestCase(APITestCase):
             "text": "test pull request",
             "status": "open",
             "user": self.user2.id,
-            "commit": "test",
         }
         response = self.client.post(reverse("pullrequest-list"), data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -285,7 +282,6 @@ class PullRequestViewSetTestCase(APITestCase):
             "text": "test pull request",
             "status": "open",
             "user": self.user2.id,
-            "commit": repo.head.commit.hexsha,
         }
 
         remote = repo.remote(name="origin")

@@ -7,7 +7,6 @@ from user.models import User
 class PullRequest(models.Model):
     title = models.CharField(max_length=255)
     text = models.CharField(max_length=255)
-    commit = models.CharField(max_length=255)
     source_branch = models.CharField(max_length=255)
     source_repository = models.ForeignKey(
         Repository, on_delete=models.CASCADE, related_name="source_pr"
