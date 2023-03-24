@@ -8,10 +8,14 @@ class PullRequest(models.Model):
     title = models.CharField(max_length=255)
     text = models.CharField(max_length=255)
     source_branch = models.CharField(max_length=255)
-    destination_branch = models.CharField(max_length=255)
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="pull_requests"
+    source_repository = models.ForeignKey(
+        Repository, on_delete=models.CASCADE, related_name="source_pr"
     )
+    target_branch = models.CharField(max_length=255)
+    target_repository = models.ForeignKey(
+        Repository, on_delete=models.CASCADE, related_name="target_pr"
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     status = models.CharField(

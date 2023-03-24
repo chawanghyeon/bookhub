@@ -1,16 +1,12 @@
 from typing import Optional
 
+from django.db import transaction
 from django.http import HttpRequest
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
 from collaboration.models import Comment, PullRequest
 from collaboration.serializers import CommentSerializer, PullRequestSerializer
-
-
-class PullRequestViewSet(viewsets.ModelViewSet):
-    queryset = PullRequest.objects.all()
-    serializer_class = PullRequestSerializer
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -62,4 +58,20 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         return Response(
             status=status.HTTP_200_OK,
+        )
+
+
+class PullRequestViewSet(viewsets.ModelViewSet):
+    queryset = PullRequest.objects.all()
+    serializer_class = PullRequestSerializer
+
+    @transaction.atomic
+    def create(self, request: HttpRequest) -> Response:
+        serializer = PullRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
         )

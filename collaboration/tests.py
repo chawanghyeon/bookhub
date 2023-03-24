@@ -8,6 +8,7 @@ from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from collaboration.models import Comment
+from fork.models import Fork
 from project.settings import REPO_ROOT
 from repository.models import Repository
 from user.models import User
@@ -34,7 +35,7 @@ class CommentViewSetTestCase(APITestCase):
             file_name,
             "w",
         ).close()
-        repo.index.add("*")
+        repo.index.add(["*"])
         repo.index.commit("initial commit")
         self.repo = Repository.objects.create(
             name="test_repo",
@@ -131,3 +132,70 @@ class CommentViewSetTestCase(APITestCase):
         response = self.client.delete(reverse("comment-detail", args=[comment.id]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Comment.objects.count(), 0)
+
+
+class PullRequestViewSetTestCase(APITestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user(
+            username="user1", password="user1_password"
+        )
+        self.user2 = User.objects.create_user(
+            username="user2", password="user2_password"
+        )
+        self.user1_token = RefreshToken.for_user(self.user1)
+        self.user2_token = RefreshToken.for_user(self.user2)
+        contents = os.listdir(REPO_ROOT)
+
+        for item in contents:
+            item_path = os.path.join(REPO_ROOT, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+        repo_dir = os.path.join(REPO_ROOT, self.user1.username, "test_repo")
+        file_name = os.path.join(repo_dir, "README.txt")
+        repo = Repo.init(repo_dir)
+        open(
+            file_name,
+            "w",
+        ).close()
+        repo.index.add(["*"])
+        repo.index.commit("initial commit")
+        self.repo = Repository.objects.create(
+            name="test_repo",
+            superuser=self.user1,
+            path=os.path.join(REPO_ROOT, self.user1.username, "test_repo"),
+        )
+        repo = Repo.clone_from(
+            self.repo.path, os.path.join(REPO_ROOT, self.user2.username, "test_repo")
+        )
+        repo.index.add(["*"])
+        repo.index.commit("initial commit")
+        self.repo2 = Repository.objects.create(
+            name="test_repo",
+            superuser=self.user2,
+            path=os.path.join(REPO_ROOT, self.user2.username, "test_repo"),
+        )
+
+        self.fork = Fork.objects.create(
+            user=self.user1,
+            source_repository=self.repo,
+            target_repository=self.repo2,
+        )
+
+    def test_create_pull_request(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
+        )
+        data = {
+            "source_branch": "main",
+            "target_branch": "main",
+            "source_repository": self.fork.source_repository.id,
+            "target_repository": self.fork.target_repository.id,
+            "title": "test pull request",
+            "text": "test pull request",
+            "status": "open",
+            "user": self.user2.id,
+        }
+        response = self.client.post(reverse("pullrequest-list"), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)

@@ -50,12 +50,13 @@ class ForkViewSetTestCase(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(self.repo.fork_set.count(), 1)
-        self.assertEqual(self.repo.fork_set.first().user, self.user1)
-        self.assertEqual(self.repo.fork_set.first().repository, self.repo)
+        self.assertEqual(self.repo.source_fork.count(), 1)
+        self.assertEqual(self.repo.source_fork.first().user, self.user1)
+        self.assertEqual(self.repo.source_fork.first().source_repository, self.repo)
         self.assertTrue(
             os.path.exists(os.path.join(REPO_ROOT, self.user1.username, "test_repo"))
         )
+        self.assertEqual(Repository.objects.count(), 2)
 
     def test_delete(self):
         data = {"repository": self.repo.id}
@@ -65,16 +66,16 @@ class ForkViewSetTestCase(APITestCase):
             HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(self.repo.fork_set.count(), 1)
-        self.assertEqual(self.repo.fork_set.first().user, self.user1)
-        self.assertEqual(self.repo.fork_set.first().repository, self.repo)
+        self.assertEqual(self.repo.source_fork.count(), 1)
+        self.assertEqual(self.repo.source_fork.first().user, self.user1)
+        self.assertEqual(self.repo.source_fork.first().source_repository, self.repo)
 
         response = self.client.delete(
             reverse("fork-detail", args=[self.repo.id]),
             HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.repo.fork_set.count(), 0)
+        self.assertEqual(self.repo.source_fork.count(), 0)
         self.assertFalse(
             os.path.exists(os.path.join(REPO_ROOT, self.user1.username, "test_repo"))
         )
