@@ -169,6 +169,9 @@ class PullRequestViewSetTestCase(APITestCase):
         repo = Repo.clone_from(
             self.repo.path, os.path.join(REPO_ROOT, self.user2.username, "test_repo")
         )
+        branch_name = "new-branch-name"
+        new_branch = repo.create_head(branch_name)
+        new_branch.checkout()
         repo.index.add(["*"])
         repo.index.commit("initial commit")
         self.repo2 = Repository.objects.create(
@@ -197,8 +200,26 @@ class PullRequestViewSetTestCase(APITestCase):
             "status": "open",
             "user": self.user2.id,
         }
+
+        with open(
+            os.path.join(REPO_ROOT, self.user2.username, "test_repo", "README.txt"), "w"
+        ) as f:
+            f.write("test")
+
+        repo = Repo(self.repo2.path)
+        repo.index.add(["*"])
+        repo.index.commit("test commit")
+
+        remote = repo.remote(name="origin")
+        remote.push(refspec=f"refs/heads/new-branch-name:refs/heads/new-branch-name")
+
         response = self.client.post(reverse("pullrequest-list"), data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(PullRequest.objects.first().title, "test pull request")
+        self.assertTrue(
+            Repo(self.fork.target_repository.path).active_branch.name, "new-branch-name"
+        )
 
     def test_create_pull_request_without_source_branch(self):
         self.client.credentials(
