@@ -73,3 +73,25 @@ class CommentViewSetTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Comment.objects.count(), 0)
+
+    def test_partial_update_comment(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
+        )
+        repo = Repo(self.repo.path)
+        commit_hash = repo.head.commit.hexsha
+        comment = Comment.objects.create(
+            user=self.user1,
+            repository=self.repo,
+            commit=commit_hash,
+            text="test comment",
+        )
+        response = self.client.patch(
+            reverse("comment-detail", kwargs={"pk": comment.id}),
+            {
+                "text": "updated comment",
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Comment.objects.count(), 1)
+        self.assertEqual(Comment.objects.first().text, "updated comment")
