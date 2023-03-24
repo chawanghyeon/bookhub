@@ -199,3 +199,19 @@ class PullRequestViewSetTestCase(APITestCase):
         }
         response = self.client.post(reverse("pullrequest-list"), data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_create_pull_request_without_source_branch(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
+        )
+        data = {
+            "target_branch": "main",
+            "source_repository": self.fork.source_repository.id,
+            "target_repository": self.fork.target_repository.id,
+            "title": "test pull request",
+            "text": "test pull request",
+            "status": "open",
+            "user": self.user2.id,
+        }
+        response = self.client.post(reverse("pullrequest-list"), data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
