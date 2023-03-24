@@ -182,8 +182,8 @@ class PullRequestViewSetTestCase(APITestCase):
 
         self.fork = Fork.objects.create(
             user=self.user1,
-            source_repository=self.repo,
-            target_repository=self.repo2,
+            source_repository=self.repo2,
+            target_repository=self.repo,
         )
 
     def test_create_pull_request(self):
@@ -298,3 +298,43 @@ class PullRequestViewSetTestCase(APITestCase):
         response = self.client.post(reverse("pullrequest-check", args=[1]), data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue("test" in str(response.data))
+
+    def test_approve_pull_request(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
+        )
+
+        with open(
+            os.path.join(REPO_ROOT, self.user2.username, "test_repo", "README.txt"), "w"
+        ) as f:
+            f.write("test")
+
+        repo = Repo(self.repo2.path)
+        repo.index.add(["*"])
+        repo.index.commit("test commit")
+        data = {
+            "source_branch": "new-branch-name",
+            "target_branch": "main",
+            "source_repository": self.fork.source_repository.id,
+            "target_repository": self.fork.target_repository.id,
+            "title": "test pull request",
+            "text": "test pull request",
+            "status": "open",
+            "user": self.user2.id,
+        }
+
+        response = self.client.post(reverse("pullrequest-list"), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(PullRequest.objects.count(), 1)
+        self.assertEqual(PullRequest.objects.first().title, "test pull request")
+        self.assertTrue(
+            Repo(self.fork.target_repository.path).active_branch.name, "new-branch-name"
+        )
+
+        response = self.client.post(reverse("pullrequest-approve", args=[1]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(PullRequest.objects.first().status, "merged")
+        with open(
+            os.path.join(REPO_ROOT, self.user1.username, "test_repo", "README.txt"), "r"
+        ) as f:
+            self.assertEqual(f.read(), "test")

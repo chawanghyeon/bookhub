@@ -123,9 +123,27 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         pull_request.save()
 
         target_repo = Repo(pull_request.target_repository.path)
-        Repo(pull_request.source_repository.path)
+        target_repo.git.checkout(pull_request.target_branch)
 
-        target_repo.git.merge(pull_request.commit)
+        source_repo = Repo(pull_request.source_repository.path)
+        source_repo.git.checkout(pull_request.source_branch)
+
+        target_remote = target_repo.create_remote(
+            "source", url=f"file://{source_repo.working_dir}"
+        )
+        target_remote.fetch()
+
+        target_branch = target_repo.heads[pull_request.target_branch]
+        source_branch = (
+            f"{target_remote.name}/{source_repo.heads[pull_request.source_branch]}"
+        )
+        target_repo.git.merge(source_branch)
+
+        target_repo.index.add(["*"])
+        target_repo.index.commit("Merged pull request")
+
+        target_remote.push(refspec=f"{target_branch.name}:{target_branch.name}")
+        target_repo.delete_remote(target_remote)
 
         return Response(
             status=status.HTTP_200_OK,
