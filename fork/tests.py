@@ -58,10 +58,12 @@ class ForkViewSetTestCase(APITestCase):
             os.path.exists(os.path.join(REPO_ROOT, self.user1.username, "test_repo"))
         )
         self.assertEqual(Repository.objects.count(), 2)
-        self.assertTrue(Repo(fork.target_repository.path).bare)
+        self.assertFalse(Repo(fork.target_repository.path).bare)
         self.assertTrue(
-            Repo(fork.target_repository.path).remotes.source.url.startswith("file://")
+            Repo(fork.target_repository.path).active_branch.name, "new-branch-name"
         )
+
+        self.assertEqual(len(Repo(fork.source_repository.path).branches), 1)
 
     def test_delete(self):
         data = {"repository": self.repo.id}

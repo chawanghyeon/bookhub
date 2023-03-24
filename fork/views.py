@@ -27,12 +27,12 @@ class ForkViewSet(viewsets.ModelViewSet):
             REPO_ROOT, request.user.username, source_repository.name
         )
 
-        repo = Repo.clone_from(source_dir, target_dir, bare=True)
-        remote = repo.create_remote("source", url="file://" + source_dir)
-        remote.fetch()
+        repo = Repo.clone_from(source_dir, target_dir)
         branch_name = "new-branch-name"
-        repo.create_head(branch_name)
-        remote.push(refspec=f"refs/heads/{branch_name}:refs/heads/{branch_name}")
+        new_branch = repo.create_head(branch_name)
+        new_branch.checkout()
+        # remote = repo.remote(name="origin")
+        # remote.push(refspec=f"refs/heads/{branch_name}:refs/heads/{branch_name}")
 
         target_repository = Repository.objects.create(
             name=source_repository.name,
