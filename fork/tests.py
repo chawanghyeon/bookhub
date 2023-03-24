@@ -12,7 +12,7 @@ from repository.models import Repository
 from user.models import User
 
 
-class RepositoryViewSetTestCase(APITestCase):
+class ForkViewSetTestCase(APITestCase):
     def setUp(self):
         self.user1 = User.objects.create_user(
             username="user1", password="user1_password"
