@@ -12,6 +12,7 @@ from rest_framework.decorators import action
 from rest_framework.pagination import CursorPagination
 from rest_framework.response import Response
 
+from collaboration.models import PullRequest
 from project.settings import REPO_ROOT
 from repository.models import Repository
 from repository.serializers import RepositorySerializer
@@ -107,6 +108,19 @@ class RepositoryViewSet(viewsets.ModelViewSet):
         self, request: HttpRequest, pk: Optional[str] = None
     ) -> Response:
         repository = Repository.objects.get(pk=pk)
+        if repository.superuser != request.user:
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if (
+            repository.fork
+            and PullRequest.objects.filter(
+                repository=repository, status="open"
+            ).exists()
+        ):
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
         txt_file = request.data.get("file", None)
         message = request.data.get("message", None)
 
@@ -144,6 +158,19 @@ class RepositoryViewSet(viewsets.ModelViewSet):
         self, request: HttpRequest, pk: Optional[str] = None
     ) -> Response:
         repository = Repository.objects.get(pk=pk)
+        if repository.superuser != request.user:
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if (
+            repository.fork
+            and PullRequest.objects.filter(
+                repository=repository, status="open"
+            ).exists()
+        ):
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
         repo = Repo(repository.path)
         structure = request.data.get("structure", None)
         message = request.data.get("message", None)
