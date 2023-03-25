@@ -30,6 +30,7 @@ class Repository(models.Model):
     star_count = models.IntegerField(default=0)
     fork_count = models.IntegerField(default=0)
     private = models.BooleanField(default=False)
+    fork = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.name

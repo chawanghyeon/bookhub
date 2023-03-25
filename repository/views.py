@@ -90,6 +90,16 @@ class RepositoryViewSet(viewsets.ModelViewSet):
         data = RepositorySerializer(repository).data
         data["tree"] = tree_json
 
+        if repository.fork:
+            remote = repo.remotes.origin
+            remote.fetch()
+            remote_tree = remote.refs.main.commit.tree
+            diff = remote_tree.diff(repo.head.commit.tree)
+            if diff:
+                data["pullrequest"] = True
+            else:
+                data["pullrequest"] = False
+
         return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["patch"], url_path="file", url_name="file")
