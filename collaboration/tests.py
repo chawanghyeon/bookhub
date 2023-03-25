@@ -301,7 +301,7 @@ class PullRequestViewSetTestCase(APITestCase):
 
     def test_approve_pull_request(self):
         self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
         )
 
         with open(
@@ -338,3 +338,23 @@ class PullRequestViewSetTestCase(APITestCase):
             os.path.join(REPO_ROOT, self.user1.username, "test_repo", "README.txt"), "r"
         ) as f:
             self.assertEqual(f.read(), "test")
+
+    def test_approve_pull_request_with_another_user(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
+        )
+        data = {
+            "source_branch": "new-branch-name",
+            "target_branch": "main",
+            "source_repository": self.fork.source_repository.id,
+            "target_repository": self.fork.target_repository.id,
+            "title": "test pull request",
+            "text": "test pull request",
+            "status": "open",
+            "user": self.user2.id,
+        }
+
+        response = self.client.post(reverse("pullrequest-list"), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(reverse("pullrequest-approve", args=[1]), data={})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
