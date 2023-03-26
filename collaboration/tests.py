@@ -395,5 +395,25 @@ class PullRequestViewSetTestCase(APITestCase):
         reop.index.commit("test commit")
 
         response = self.client.post(reverse("pullrequest-approve", args=[1]), data={})
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_reject_pull_request(self):
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
+        )
+        data = {
+            "source_branch": "new-branch-name",
+            "target_branch": "main",
+            "source_repository": self.fork.source_repository.id,
+            "target_repository": self.fork.target_repository.id,
+            "title": "test pull request",
+            "text": "test pull request",
+            "status": "open",
+            "user": self.user2.id,
+        }
+
+        response = self.client.post(reverse("pullrequest-list"), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(reverse("pullrequest-reject", args=[1]), data={})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(PullRequest.objects.first().status, "closed")

@@ -167,3 +167,21 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         return Response(
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=True, methods=["post"], url_path="reject", url_name="reject")
+    def reject_pull_request(
+        self, request: HttpRequest, pk: Optional[str] = None
+    ) -> Response:
+        pull_request = PullRequest.objects.get(pk=pk)
+
+        if pull_request.target_repository.superuser != request.user:
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        pull_request.status = "closed"
+        pull_request.save()
+
+        return Response(
+            status=status.HTTP_200_OK,
+        )
