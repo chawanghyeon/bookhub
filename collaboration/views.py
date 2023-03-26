@@ -143,7 +143,20 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         source_branch = (
             f"{target_remote.name}/{source_repo.heads[pull_request.source_branch]}"
         )
-        target_repo.git.merge(source_branch)
+        try:
+            target_repo.git.merge(source_branch)
+        except Exception as e:
+            data = {"error": str(e)}
+            temp = target_repo.index.unmerged_blobs()
+            file_path = list(temp.keys())[0]
+            blob_list = temp[file_path]
+            path = blob_list[0][1].abspath
+            with open(path, "r") as f:
+                data["file"] = f.read()
+            return Response(
+                data,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         target_repo.index.add(["*"])
         target_repo.index.commit("Merged pull request")
