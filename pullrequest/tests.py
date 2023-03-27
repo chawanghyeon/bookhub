@@ -43,7 +43,7 @@ class PullRequestViewSetTestCase(APITestCase):
         repo.index.commit("initial commit")
         self.repository = Repository.objects.create(
             name="test_repo",
-            superuser=self.user1,
+            user=self.user1,
             path=os.path.join(REPO_ROOT, self.user1.username, "test_repo"),
         )
 
@@ -59,7 +59,7 @@ class PullRequestViewSetTestCase(APITestCase):
         repo.index.commit("initial commit")
         self.repository2 = Repository.objects.create(
             name="test_repo",
-            superuser=self.user2,
+            user=self.user2,
             path=os.path.join(REPO_ROOT, self.user2.username, "test_repo"),
         )
 
@@ -209,5 +209,6 @@ class PullRequestViewSetTestCase(APITestCase):
             reverse("pullrequest-resolve", args=[1]),
             data={"choice": "REMOTE", "filename": "README.txt"},
         )
-        self.assertEqual(response.data["file"], "asdfasdf")
+        with open(os.path.join(self.repository.path, "README.txt"), "r") as f:
+            self.assertEqual(f.read(), "test")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
