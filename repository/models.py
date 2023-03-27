@@ -17,7 +17,7 @@ class Tag(models.Model):
 class Repository(models.Model):
     id = models.BigAutoField(primary_key=True, unique=True)
     name = models.CharField(max_length=100)
-    superuser = models.ForeignKey(
+    user = models.ForeignKey(
         User, related_name="repositories_superuser", on_delete=models.CASCADE
     )
     owners = models.ManyToManyField(User, related_name="repositories")
