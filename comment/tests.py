@@ -37,7 +37,7 @@ class CommentViewSetTestCase(APITestCase):
 
         self.repo = Repository.objects.create(
             name="test_repo",
-            superuser=self.user1,
+            user=self.user1,
             path=os.path.join(REPO_ROOT, self.user1.username, "test_repo"),
         )
 
