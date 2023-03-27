@@ -22,39 +22,42 @@ class PullRequestViewSetTestCase(APITestCase):
         self.user2 = User.objects.create_user(
             username="user2", password="user2_password"
         )
-        self.user1_token = RefreshToken.for_user(self.user1)
-        self.user2_token = RefreshToken.for_user(self.user2)
-        contents = os.listdir(REPO_ROOT)
+        self.user1_token = RefreshToken.for_user(self.user1).access_token
+        self.user2_token = RefreshToken.for_user(self.user2).access_token
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user2_token}")
 
-        for item in contents:
-            item_path = os.path.join(REPO_ROOT, item)
-            if os.path.isfile(item_path):
-                os.remove(item_path)
-            elif os.path.isdir(item_path):
-                shutil.rmtree(item_path)
-        repo_dir = os.path.join(REPO_ROOT, self.user1.username, "test_repo")
-        file_name = os.path.join(repo_dir, "README.txt")
-        repo = Repo.init(repo_dir)
-        open(
-            file_name,
-            "w",
-        ).close()
+        # Remove all files and directories in REPO_ROOT
+        for dirpath, dirnames, filenames in os.walk(REPO_ROOT):
+            for file in filenames:
+                os.remove(os.path.join(dirpath, file))
+            for dirname in dirnames:
+                shutil.rmtree(os.path.join(dirpath, dirname))
+
+        repo_path = os.path.join(REPO_ROOT, self.user1.username, "test_repo")
+        file_path = os.path.join(repo_path, "README.txt")
+
+        # Create a repository
+        repo = Repo.init(repo_path)
+        open(file_path, "w").close()
         repo.index.add(["*"])
         repo.index.commit("initial commit")
-        self.repo = Repository.objects.create(
+        self.repository = Repository.objects.create(
             name="test_repo",
             superuser=self.user1,
             path=os.path.join(REPO_ROOT, self.user1.username, "test_repo"),
         )
+
+        # Create a fork
         repo = Repo.clone_from(
-            self.repo.path, os.path.join(REPO_ROOT, self.user2.username, "test_repo")
+            self.repository.path,
+            os.path.join(REPO_ROOT, self.user2.username, "test_repo"),
         )
         branch_name = "new-branch-name"
         new_branch = repo.create_head(branch_name)
         new_branch.checkout()
         repo.index.add(["*"])
         repo.index.commit("initial commit")
-        self.repo2 = Repository.objects.create(
+        self.repository2 = Repository.objects.create(
             name="test_repo",
             superuser=self.user2,
             path=os.path.join(REPO_ROOT, self.user2.username, "test_repo"),
@@ -62,25 +65,12 @@ class PullRequestViewSetTestCase(APITestCase):
 
         self.fork = Fork.objects.create(
             user=self.user1,
-            source_repository=self.repo2,
-            target_repository=self.repo,
+            source_repository=self.repository2,
+            target_repository=self.repository,
         )
 
-    def test_create_pull_request(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
-        )
-
-        with open(
-            os.path.join(REPO_ROOT, self.user2.username, "test_repo", "README.txt"), "w"
-        ) as f:
-            f.write("test")
-
-        repo = Repo(self.repo2.path)
-        repo.index.add(["*"])
-        repo.index.commit("test commit")
-        data = {
-            "source_branch": "main",
+        self.data = {
+            "source_branch": "new-branch-name",
             "target_branch": "main",
             "source_repository": self.fork.source_repository.id,
             "target_repository": self.fork.target_repository.id,
@@ -90,187 +80,95 @@ class PullRequestViewSetTestCase(APITestCase):
             "user": self.user2.id,
         }
 
-        remote = repo.remote(name="origin")
-        remote.push(refspec=f"refs/heads/new-branch-name:refs/heads/new-branch-name")
+    def test_create_pull_request(self):
+        path = self.repository2.path
+        with open(os.path.join(path, "README.txt"), "w") as f:
+            f.write("test")
 
-        response = self.client.post(reverse("pullrequest-list"), data)
+        repo = Repo(path)
+        repo.index.add(["*"])
+        repo.index.commit("test commit")
+
+        response = self.client.post(reverse("pullrequest-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(PullRequest.objects.first().title, "test pull request")
-        self.assertTrue(
-            Repo(self.fork.target_repository.path).active_branch.name, "new-branch-name"
-        )
 
     def test_create_pull_request_without_source_branch(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
-        )
-        data = {
-            "target_branch": "main",
-            "source_repository": self.fork.source_repository.id,
-            "target_repository": self.fork.target_repository.id,
-            "title": "test pull request",
-            "text": "test pull request",
-            "status": "open",
-            "user": self.user2.id,
-        }
-        response = self.client.post(reverse("pullrequest-list"), data)
+        self.data["source_branch"] = ""
+        response = self.client.post(reverse("pullrequest-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_destory_pull_request(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
-        )
-        data = {
-            "source_branch": "main",
-            "target_branch": "main",
-            "source_repository": self.fork.source_repository.id,
-            "target_repository": self.fork.target_repository.id,
-            "title": "test pull request",
-            "text": "test pull request",
-            "status": "open",
-            "user": self.user2.id,
-        }
-        response = self.client.post(reverse("pullrequest-list"), data)
+        response = self.client.post(reverse("pullrequest-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        pull_request = PullRequest.objects.first()
-        response = self.client.delete(
-            reverse("pullrequest-detail", args=[pull_request.id])
-        )
+        response = self.client.delete(reverse("pullrequest-detail", args=[1]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(PullRequest.objects.count(), 0)
 
     def test_check_difference(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
-        )
-
-        with open(
-            os.path.join(REPO_ROOT, self.user2.username, "test_repo", "README.txt"), "w"
-        ) as f:
+        path = self.repository2.path
+        with open(os.path.join(path, "README.txt"), "w") as f:
             f.write("test")
 
-        repo = Repo(self.repo2.path)
+        repo = Repo(path)
         repo.index.add(["*"])
         repo.index.commit("test commit")
-        data = {
-            "source_branch": "main",
-            "target_branch": "main",
-            "source_repository": self.fork.source_repository.id,
-            "target_repository": self.fork.target_repository.id,
-            "title": "test pull request",
-            "text": "test pull request",
-            "status": "open",
-            "user": self.user2.id,
-        }
 
-        remote = repo.remote(name="origin")
-        remote.push(refspec=f"refs/heads/new-branch-name:refs/heads/new-branch-name")
-
-        response = self.client.post(reverse("pullrequest-list"), data)
+        response = self.client.post(reverse("pullrequest-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(PullRequest.objects.first().title, "test pull request")
-        self.assertTrue(
-            Repo(self.fork.target_repository.path).active_branch.name, "new-branch-name"
-        )
 
-        response = self.client.post(reverse("pullrequest-check", args=[1]), data)
+        response = self.client.post(reverse("pullrequest-check", args=[1]), self.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue("test" in str(response.data))
 
     def test_approve_pull_request(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
-        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
+        path = self.repository2.path
 
-        with open(
-            os.path.join(REPO_ROOT, self.user2.username, "test_repo", "README.txt"), "w"
-        ) as f:
+        with open(os.path.join(path, "README.txt"), "w") as f:
             f.write("test")
 
-        repo = Repo(self.repo2.path)
+        repo = Repo(path)
         repo.index.add(["*"])
         repo.index.commit("test commit")
-        data = {
-            "source_branch": "new-branch-name",
-            "target_branch": "main",
-            "source_repository": self.fork.source_repository.id,
-            "target_repository": self.fork.target_repository.id,
-            "title": "test pull request",
-            "text": "test pull request",
-            "status": "open",
-            "user": self.user2.id,
-        }
 
-        response = self.client.post(reverse("pullrequest-list"), data)
+        response = self.client.post(reverse("pullrequest-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(PullRequest.objects.first().title, "test pull request")
-        self.assertTrue(
-            Repo(self.fork.target_repository.path).active_branch.name, "new-branch-name"
-        )
 
         response = self.client.post(reverse("pullrequest-approve", args=[1]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(PullRequest.objects.first().status, "merged")
-        with open(
-            os.path.join(REPO_ROOT, self.user1.username, "test_repo", "README.txt"), "r"
-        ) as f:
+        with open(os.path.join(self.repository.path, "README.txt"), "r") as f:
             self.assertEqual(f.read(), "test")
 
     def test_approve_pull_request_with_another_user(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user2_token.access_token}"
-        )
-        data = {
-            "source_branch": "new-branch-name",
-            "target_branch": "main",
-            "source_repository": self.fork.source_repository.id,
-            "target_repository": self.fork.target_repository.id,
-            "title": "test pull request",
-            "text": "test pull request",
-            "status": "open",
-            "user": self.user2.id,
-        }
-
-        response = self.client.post(reverse("pullrequest-list"), data)
+        response = self.client.post(reverse("pullrequest-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.post(reverse("pullrequest-approve", args=[1]), data={})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_approve_pull_request_with_conflict(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
-        )
-        data = {
-            "source_branch": "new-branch-name",
-            "target_branch": "main",
-            "source_repository": self.fork.source_repository.id,
-            "target_repository": self.fork.target_repository.id,
-            "title": "test pull request",
-            "text": "test pull request",
-            "status": "open",
-            "user": self.user2.id,
-        }
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
 
-        response = self.client.post(reverse("pullrequest-list"), data)
+        response = self.client.post(reverse("pullrequest-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        with open(
-            os.path.join(REPO_ROOT, self.user2.username, "test_repo", "README.txt"), "w"
-        ) as f:
+        path = self.repository2.path
+        with open(os.path.join(path, "README.txt"), "w") as f:
             f.write("test")
 
-        repo = Repo(self.repo2.path)
+        repo = Repo(path)
         repo.index.add(["*"])
         repo.index.commit("test commit")
 
-        with open(
-            os.path.join(REPO_ROOT, self.user1.username, "test_repo", "README.txt"), "w"
-        ) as f:
+        with open(os.path.join(self.repository.path, "README.txt"), "w") as f:
             f.write("asdfasdf")
-        reop = Repo(self.repo.path)
+        reop = Repo(self.repository.path)
         reop.index.add(["*"])
         reop.index.commit("test commit")
 
@@ -278,58 +176,29 @@ class PullRequestViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_reject_pull_request(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
-        )
-        data = {
-            "source_branch": "new-branch-name",
-            "target_branch": "main",
-            "source_repository": self.fork.source_repository.id,
-            "target_repository": self.fork.target_repository.id,
-            "title": "test pull request",
-            "text": "test pull request",
-            "status": "open",
-            "user": self.user2.id,
-        }
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
 
-        response = self.client.post(reverse("pullrequest-list"), data)
+        response = self.client.post(reverse("pullrequest-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.post(reverse("pullrequest-reject", args=[1]), data={})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(PullRequest.objects.first().status, "closed")
 
     def test_resolve_conflict(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
-        )
-        data = {
-            "source_branch": "new-branch-name",
-            "target_branch": "main",
-            "source_repository": self.fork.source_repository.id,
-            "target_repository": self.fork.target_repository.id,
-            "title": "test pull request",
-            "text": "test pull request",
-            "status": "open",
-            "user": self.user2.id,
-        }
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
 
-        response = self.client.post(reverse("pullrequest-list"), data)
+        response = self.client.post(reverse("pullrequest-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        with open(
-            os.path.join(REPO_ROOT, self.user2.username, "test_repo", "README.txt"), "w"
-        ) as f:
+        with open(os.path.join(self.repository2.path, "README.txt"), "w") as f:
             f.write("test")
-
-        repo = Repo(self.repo2.path)
+        repo = Repo(self.repository2.path)
         repo.index.add(["*"])
         repo.index.commit("test commit")
 
-        with open(
-            os.path.join(REPO_ROOT, self.user1.username, "test_repo", "README.txt"), "w"
-        ) as f:
+        with open(os.path.join(self.repository.path, "README.txt"), "w") as f:
             f.write("asdfasdf")
-        reop = Repo(self.repo.path)
+        reop = Repo(self.repository.path)
         reop.index.add(["*"])
         reop.index.commit("test commit")
 

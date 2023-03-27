@@ -47,14 +47,14 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         target_commit = target_repo.head.commit
         target_tree = target_commit.tree
 
-        diff_index = target_tree.diff(source_tree)
+        diff_index = source_tree.diff(target_tree)
         working_tree = []
 
         for diff in diff_index:
             a_blob = diff.a_blob
             b_blob = diff.b_blob
             if a_blob and b_blob:
-                working_tree.append(target_repo.git.diff(a_blob.hexsha, b_blob.hexsha))
+                working_tree.append(source_repo.git.diff(a_blob.hexsha, b_blob.hexsha))
 
         return Response(
             working_tree,
@@ -62,7 +62,6 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         )
 
     @action(detail=True, methods=["post"], url_path="approve", url_name="approve")
-    @transaction.atomic
     def approve_pull_request(
         self, request: HttpRequest, pk: Optional[str] = None
     ) -> Response:
@@ -87,7 +86,6 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         )
         target_remote.fetch()
 
-        target_branch = target_repo.heads[pull_request.target_branch]
         source_branch = (
             f"{target_remote.name}/{source_repo.heads[pull_request.source_branch]}"
         )
@@ -109,7 +107,9 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         target_repo.index.add(["*"])
         target_repo.index.commit("Merged pull request")
 
-        target_remote.push(refspec=f"{target_branch.name}:{target_branch.name}")
+        target_remote.push(
+            refspec=f"{pull_request.target_branch}:{pull_request.target_branch}"
+        )
         target_repo.delete_remote(target_remote)
 
         return Response(
@@ -141,7 +141,7 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         choice = request.data.get("choice")
         filename = request.data.get("filename")
 
-        if not choice:
+        if not choice or not filename:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST,
             )
