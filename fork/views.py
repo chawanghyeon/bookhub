@@ -31,13 +31,12 @@ class ForkViewSet(viewsets.ModelViewSet):
         branch_name = "new-branch-name"
         new_branch = repo.create_head(branch_name)
         new_branch.checkout()
-        # remote = repo.remote(name="origin")
-        # remote.push(refspec=f"refs/heads/{branch_name}:refs/heads/{branch_name}")
 
         target_repository = Repository.objects.create(
             name=source_repository.name,
             superuser=request.user,
             path=target_dir,
+            fork=True,
         )
 
         target_repository.owners.add(request.user)
@@ -47,6 +46,7 @@ class ForkViewSet(viewsets.ModelViewSet):
             target_repository=target_repository,
             user=request.user,
         )
+
         return Response(status=status.HTTP_201_CREATED)
 
     @transaction.atomic

@@ -18,44 +18,42 @@ class ForkViewSetTestCase(APITestCase):
         self.user1 = User.objects.create_user(
             username="user1", password="user1_password"
         )
-        self.user1_token = RefreshToken.for_user(self.user1)
-        contents = os.listdir(REPO_ROOT)
+        self.user2 = User.objects.create_user(
+            username="user2", password="user2_password"
+        )
+        self.user1_token = RefreshToken.for_user(self.user1).access_token
 
-        for item in contents:
-            item_path = os.path.join(REPO_ROOT, item)
-            if os.path.isfile(item_path):
-                os.remove(item_path)
-            elif os.path.isdir(item_path):
-                shutil.rmtree(item_path)
-        repo_dir = os.path.join(REPO_ROOT, "test_user", "test_repo")
-        file_name = os.path.join(repo_dir, "README.txt")
-        repo = Repo.init(repo_dir)
-        open(
-            file_name,
-            "w",
-        ).close()
+        for dirpath, dirnames, filenames in os.walk(REPO_ROOT):
+            for file in filenames:
+                os.remove(os.path.join(dirpath, file))
+            for dirname in dirnames:
+                shutil.rmtree(os.path.join(dirpath, dirname))
+
+        repo_path = os.path.join(REPO_ROOT, self.user1.username, "test_repo")
+        file_path = os.path.join(repo_path, "README.txt")
+
+        repo = Repo.init(repo_path)
+        open(file_path, "w").close()
         repo.index.add("*")
         repo.index.commit("initial commit")
+
         self.repo = Repository.objects.create(
             name="test_repo",
             superuser=self.user1,
-            path=os.path.join(REPO_ROOT, "test_user", "test_repo"),
+            path=os.path.join(REPO_ROOT, self.user1.username, "test_repo"),
         )
 
     def test_create(self):
+        self.client.force_authenticate(user=self.user2)
         data = {"repository": self.repo.id}
-        response = self.client.post(
-            reverse("fork-list"),
-            data,
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
-        )
-        fork = Fork.objects.get(user=self.user1, source_repository=self.repo)
+        response = self.client.post(reverse("fork-list"), data)
+        fork = Fork.objects.get(user=self.user2, source_repository=self.repo)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(self.repo.source_fork.count(), 1)
-        self.assertEqual(fork.user, self.user1)
+        self.assertEqual(fork.user, self.user2)
         self.assertEqual(fork.source_repository, self.repo)
         self.assertTrue(
-            os.path.exists(os.path.join(REPO_ROOT, self.user1.username, "test_repo"))
+            os.path.exists(os.path.join(REPO_ROOT, self.user2.username, "test_repo"))
         )
         self.assertEqual(Repository.objects.count(), 2)
         self.assertFalse(Repo(fork.target_repository.path).bare)
@@ -66,23 +64,13 @@ class ForkViewSetTestCase(APITestCase):
         self.assertEqual(len(Repo(fork.source_repository.path).branches), 1)
 
     def test_delete(self):
+        self.client.force_authenticate(user=self.user2)
         data = {"repository": self.repo.id}
-        response = self.client.post(
-            reverse("fork-list"),
-            data,
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(self.repo.source_fork.count(), 1)
-        self.assertEqual(self.repo.source_fork.first().user, self.user1)
-        self.assertEqual(self.repo.source_fork.first().source_repository, self.repo)
+        response = self.client.post(reverse("fork-list"), data)
 
-        response = self.client.delete(
-            reverse("fork-detail", args=[self.repo.id]),
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}",
-        )
+        response = self.client.delete(reverse("fork-detail", args=[self.repo.id]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(self.repo.source_fork.count(), 0)
         self.assertFalse(
-            os.path.exists(os.path.join(REPO_ROOT, self.user1.username, "test_repo"))
+            os.path.exists(os.path.join(REPO_ROOT, self.user2.username, "test_repo"))
         )
