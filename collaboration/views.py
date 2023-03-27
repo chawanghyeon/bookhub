@@ -185,3 +185,45 @@ class PullRequestViewSet(viewsets.ModelViewSet):
         return Response(
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=True, methods=["post"], url_path="resolve", url_name="resolve")
+    def resolve_conflict(
+        self, request: HttpRequest, pk: Optional[str] = None
+    ) -> Response:
+        choice = request.data.get("choice")
+        filename = request.data.get("filename")
+
+        if not choice:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        pull_request = PullRequest.objects.get(pk=pk)
+
+        if pull_request.target_repository.superuser != request.user:
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        target_repo = Repo(pull_request.target_repository.path)
+
+        unmerged_blobs = target_repo.index.unmerged_blobs()[filename]
+        path = unmerged_blobs[0][1].abspath
+
+        with open(path, "w") as f:
+            if choice == "HEAD":
+                f.write(unmerged_blobs[2][1].data_stream.read().decode("utf-8"))
+            elif choice == "REMOTE":
+                f.write(unmerged_blobs[1][1].data_stream.read().decode("utf-8"))
+
+        target_repo.index.remove([path])
+        target_repo.index.add([path])
+        target_repo.index.commit("Resolved conflict")
+
+        with open(path, "r") as f:
+            data = {"file": f.read()}
+
+        return Response(
+            data,
+            status=status.HTTP_200_OK,
+        )
