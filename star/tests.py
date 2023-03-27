@@ -18,7 +18,7 @@ class StarViewSetTestCase(APITestCase):
         )
         self.repository = Repository.objects.create(
             name="test_reop",
-            superuser=self.user1,
+            user=self.user1,
             path=os.path.join(REPO_ROOT, self.user1.username, "test_repo"),
         )
         self.user1_token = RefreshToken.for_user(self.user1).access_token
