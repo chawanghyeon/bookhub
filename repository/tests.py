@@ -16,11 +16,11 @@ from user.models import User
 
 class RepositoryViewSetTestCase(APITestCase):
     def setUp(self):
-        self.user1 = User.objects.create_user(
-            username="user1", password="user1_password"
+        self.user1 = User.objects.create(
+            username="user1@user1.com", password="user1_password"
         )
-        self.user2 = User.objects.create_user(
-            username="user2", password="user2_password"
+        self.user2 = User.objects.create(
+            username="user2@user2.com", password="user2_password"
         )
         self.user1_token = RefreshToken.for_user(self.user1).access_token
         self.user2_token = RefreshToken.for_user(self.user2).access_token
