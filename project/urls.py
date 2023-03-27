@@ -23,8 +23,9 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
-from collaboration.views import CommentViewSet, PullRequestViewSet
+from comment.views import CommentViewSet
 from fork.views import ForkViewSet
+from pullrequest.views import PullRequestViewSet
 from repository.views import RepositoryViewSet
 from star.views import StarViewSet
 from user.views import AuthViewSet, UserViewSet

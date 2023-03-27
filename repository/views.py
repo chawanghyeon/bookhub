@@ -12,8 +12,8 @@ from rest_framework.decorators import action
 from rest_framework.pagination import CursorPagination
 from rest_framework.response import Response
 
-from collaboration.models import PullRequest
 from project.settings import REPO_ROOT
+from pullrequest.models import PullRequest
 from repository.models import Repository
 from repository.serializers import RepositorySerializer
 
