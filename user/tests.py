@@ -50,11 +50,9 @@ class UserViewSetTestCase(APITestCase):
             username="user1@user1.com", password="user1_password"
         )
 
-        self.user1_token = RefreshToken.for_user(self.user1)
+        self.user1_token = RefreshToken.for_user(self.user1).access_token
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
-        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
 
     def test_retrieve_user(self):
         response = self.client.get(reverse("user-detail", args=[self.user1.id]))
