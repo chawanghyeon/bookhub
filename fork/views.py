@@ -34,7 +34,7 @@ class ForkViewSet(viewsets.ModelViewSet):
 
         target_repository = Repository.objects.create(
             name=source_repository.name,
-            superuser=request.user,
+            user=request.user,
             path=target_dir,
             fork=True,
         )
