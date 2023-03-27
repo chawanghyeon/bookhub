@@ -44,9 +44,7 @@ class CommentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        comment = Comment.objects.get(pk=pk)
-        comment.text = text
-        comment.save()
+        Comment.objects.filter(pk=pk).update(text=text)
 
         return Response(
             status=status.HTTP_200_OK,

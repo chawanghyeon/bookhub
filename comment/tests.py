@@ -18,42 +18,36 @@ class CommentViewSetTestCase(APITestCase):
         self.user1 = User.objects.create_user(
             username="user1", password="user1_password"
         )
-        self.user1_token = RefreshToken.for_user(self.user1)
-        contents = os.listdir(REPO_ROOT)
+        self.user1_token = RefreshToken.for_user(self.user1).access_token
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
 
-        for item in contents:
-            item_path = os.path.join(REPO_ROOT, item)
-            if os.path.isfile(item_path):
-                os.remove(item_path)
-            elif os.path.isdir(item_path):
-                shutil.rmtree(item_path)
-        repo_dir = os.path.join(REPO_ROOT, "test_user", "test_repo")
-        file_name = os.path.join(repo_dir, "README.txt")
-        repo = Repo.init(repo_dir)
-        open(
-            file_name,
-            "w",
-        ).close()
+        for dirpath, dirnames, filenames in os.walk(REPO_ROOT):
+            for file in filenames:
+                os.remove(os.path.join(dirpath, file))
+            for dirname in dirnames:
+                shutil.rmtree(os.path.join(dirpath, dirname))
+
+        repo_path = os.path.join(REPO_ROOT, self.user1.username, "test_repo")
+        file_path = os.path.join(repo_path, "README.txt")
+
+        repo = Repo.init(repo_path)
+        open(file_path, "w").close()
         repo.index.add(["*"])
         repo.index.commit("initial commit")
+
         self.repo = Repository.objects.create(
             name="test_repo",
             superuser=self.user1,
-            path=os.path.join(REPO_ROOT, "test_user", "test_repo"),
+            path=os.path.join(REPO_ROOT, self.user1.username, "test_repo"),
         )
 
     def test_create_comment(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
-        )
-        repo = Repo(self.repo.path)
-        commit_hash = repo.head.commit.hexsha
         response = self.client.post(
             reverse("comment-list"),
             {
                 "text": "test comment",
                 "repository": self.repo.id,
-                "commit": commit_hash,
+                "commit": Repo(self.repo.path).head.commit.hexsha,
             },
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -61,9 +55,6 @@ class CommentViewSetTestCase(APITestCase):
         self.assertEqual(Comment.objects.first().text, "test comment")
 
     def test_create_comment_without_commit(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
-        )
         response = self.client.post(
             reverse("comment-list"),
             {
@@ -75,19 +66,14 @@ class CommentViewSetTestCase(APITestCase):
         self.assertEqual(Comment.objects.count(), 0)
 
     def test_partial_update_comment(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
-        )
-        repo = Repo(self.repo.path)
-        commit_hash = repo.head.commit.hexsha
         comment = Comment.objects.create(
             user=self.user1,
             repository=self.repo,
-            commit=commit_hash,
+            commit=Repo(self.repo.path).head.commit.hexsha,
             text="test comment",
         )
         response = self.client.patch(
-            reverse("comment-detail", kwargs={"pk": comment.id}),
+            reverse("comment-detail", args=[comment.id]),
             {
                 "text": "updated comment",
             },
@@ -97,35 +83,24 @@ class CommentViewSetTestCase(APITestCase):
         self.assertEqual(Comment.objects.first().text, "updated comment")
 
     def test_partial_update_comment_without_text(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
-        )
-        repo = Repo(self.repo.path)
-        commit_hash = repo.head.commit.hexsha
         comment = Comment.objects.create(
             user=self.user1,
             repository=self.repo,
-            commit=commit_hash,
+            commit=Repo(self.repo.path).head.commit.hexsha,
             text="test comment",
         )
         response = self.client.patch(
-            reverse("comment-detail", kwargs={"pk": comment.id}),
-            {},
+            reverse("comment-detail", args=[comment.id]),
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Comment.objects.count(), 1)
         self.assertEqual(Comment.objects.first().text, "test comment")
 
     def test_delete_comment(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {self.user1_token.access_token}"
-        )
-        repo = Repo(self.repo.path)
-        commit_hash = repo.head.commit.hexsha
         comment = Comment.objects.create(
             user=self.user1,
             repository=self.repo,
-            commit=commit_hash,
+            commit=Repo(self.repo.path).head.commit.hexsha,
             text="test comment",
         )
         response = self.client.delete(reverse("comment-detail", args=[comment.id]))
