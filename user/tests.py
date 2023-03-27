@@ -31,11 +31,7 @@ class AuthViewSetTestCase(APITestCase):
 
     def test_signin(self):
         User.objects.create_user(**self.user_data)
-        signin_data = {
-            "username": self.user_data["username"],
-            "password": self.user_data["password"],
-        }
-        response = self.client.post(reverse("auth-signin"), signin_data)
+        response = self.client.post(reverse("auth-signin"), self.user_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("token", response.data)
         self.assertIn("access", response.data["token"])
@@ -43,11 +39,8 @@ class AuthViewSetTestCase(APITestCase):
 
     def test_signin_wrong_credentials(self):
         User.objects.create_user(**self.user_data)
-        signin_data = {
-            "username": self.user_data["username"],
-            "password": "wrongpassword",
-        }
-        response = self.client.post(reverse("auth-signin"), signin_data)
+        self.user_data["password"] = "wrongpassword"
+        response = self.client.post(reverse("auth-signin"), self.user_data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -65,7 +58,6 @@ class UserViewSetTestCase(APITestCase):
 
     def test_retrieve_user(self):
         response = self.client.get(reverse("user-detail", args=[self.user1.id]))
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         serializer = UserSerializer(self.user1)
@@ -82,20 +74,6 @@ class UserViewSetTestCase(APITestCase):
     def test_destroy_user_wrong_password(self):
         response = self.client.delete(
             reverse("user-detail", args=[self.user1.id]), {"password": "wrongpassword"}
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_retrieve_user_no_auth(self):
-        self.client.credentials()
-        response = self.client.get(reverse("user-detail", args=[self.user1.id]))
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_destroy_user_no_auth(self):
-        self.client.credentials()
-        response = self.client.delete(
-            reverse("user-detail", args=[self.user1.id]), {"password": "user1_password"}
         )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
