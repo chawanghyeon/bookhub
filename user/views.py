@@ -1,11 +1,17 @@
+import os
+import shutil
 from typing import Optional
 
 from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import make_password
 from django.db import transaction
 from django.http import HttpRequest
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from project.settings import REPO_ROOT
 from user.models import User
 from user.serializers import UserSerializer
 
@@ -34,13 +40,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
         user.delete()
 
+        shutil.rmtree(os.path.join(REPO_ROOT, request.user.username))
+
         return Response(status=status.HTTP_200_OK)
-
-
-from django.contrib.auth import authenticate
-from django.contrib.auth.hashers import make_password
-from rest_framework.decorators import action
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class AuthViewSet(viewsets.ModelViewSet):
@@ -54,6 +56,9 @@ class AuthViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         serializer.save(password=make_password(request.data.get("password")))
+
+        start_dir = os.path.join(REPO_ROOT, request.data.get("username"))
+        os.mkdir(start_dir)
 
         return Response(status=status.HTTP_201_CREATED)
 

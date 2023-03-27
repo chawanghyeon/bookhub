@@ -4,6 +4,7 @@ from django.db import models
 
 class User(AbstractUser):
     id = models.BigAutoField(primary_key=True, unique=True)
+    username = models.EmailField(unique=True)
 
     def __unicode__(self):
         return self.first_name
