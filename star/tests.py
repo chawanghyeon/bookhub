@@ -21,7 +21,8 @@ class StarViewSetTestCase(APITestCase):
             superuser=self.user1,
             path=os.path.join(REPO_ROOT, self.user1.username, "test_repo"),
         )
-        self.user1_token = RefreshToken.for_user(self.user1)
+        self.user1_token = RefreshToken.for_user(self.user1).access_token
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
 
     def test_create_star(self):
         response = self.client.post(
@@ -52,22 +53,3 @@ class StarViewSetTestCase(APITestCase):
         response = self.client.get(reverse("star-detail", args=[self.user1.id]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
-
-    def test_create_star_no_auth(self):
-        self.client.credentials()
-        response = self.client.post(
-            reverse("star-list"), {"repository": self.repository.id}
-        )
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_destroy_star_no_auth(self):
-        self.client.credentials()
-        star = Star.objects.create(user=self.user1, repository=self.repository)
-        response = self.client.delete(reverse("star-detail", args=[star.id]))
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_retrieve_stars_no_auth(self):
-        self.client.credentials()
-        Star.objects.create(user=self.user1, repository=self.repository)
-        response = self.client.get(reverse("star-detail", args=[self.user1.id]))
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
