@@ -1,3 +1,5 @@
 from django.contrib import admin
 
-# Register your models here.
+from star.models import Star
+
+admin.site.register(Star)

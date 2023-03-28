@@ -20,3 +20,4 @@ vscode
 docker-compose.yml
 dockerfile
 requirements.txt
+nginx.conf
