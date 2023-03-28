@@ -17,3 +17,6 @@ root
 vscode
 .DS_Store
 .json
+docker-compose.yml
+dockerfile
+requirements.txt
