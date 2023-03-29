@@ -1,0 +1,54 @@
+version: '3.8'
+
+networks:
+  front-connection:
+    driver: bridge
+  db-connection:
+    driver: bridge
+
+services:
+  nginx:
+    container_name: nginx
+    image: nginx
+    restart: always
+    #외부와 소통하는 경우에는 ports로 포트 설정.
+    ports: 
+      - "80:80"
+      - "443:443"
+    volumes:
+    #docker-compose.yml과 같은 레벨에 둔 nginx.conf를 mount.
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - front-connection
+    environment:
+      - TZ=Asia/Seoul
+    depends_on:
+      - web
+  db:
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=bookhub
+      - POSTGRES_USER=bookhub
+      - POSTGRES_PASSWORD=bookhub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    expose:
+      - "5432"
+    networks:
+      - db-connection
+  web:
+    image: chawanghyeon/bookhub:latest
+    command: gunicorn project.wsgi:application --workers=2 --bind 0.0.0.0:8000
+    volumes:
+      - .:/usr/src/app
+    expose:
+      - "8000"
+    depends_on:
+      - db
+    networks:
+      - front-connection
+      - db-connection
+      
+volumes:
+  postgres_data:
