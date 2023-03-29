@@ -1,0 +1,109 @@
+import os
+import shutil
+
+from django.urls import reverse
+from git.repo import Repo
+from rest_framework import status
+from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from project.settings import REPO_ROOT
+from repository.models import Repository
+from user.models import User
+
+
+class BranchViewSetTestCase(APITestCase):
+    def setUp(self):
+        self.user1 = User.objects.create(
+            username="user1@user1.com", password="user1_password"
+        )
+        self.user1_token = RefreshToken.for_user(self.user1).access_token
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
+
+        # Remove all files and directories in REPO_ROOT
+        for dirpath, dirnames, filenames in os.walk(REPO_ROOT):
+            for file in filenames:
+                os.remove(os.path.join(dirpath, file))
+            for dirname in dirnames:
+                shutil.rmtree(os.path.join(dirpath, dirname))
+
+        repo_path = os.path.join(REPO_ROOT, self.user1.username, "test_repo")
+        file_path = os.path.join(repo_path, "README.txt")
+
+        repo = Repo.init(repo_path)
+        open(file_path, "w").close()
+        repo.index.add("*")
+        repo.index.commit("initial commit")
+
+        self.repository = Repository.objects.create(
+            name="test_repo",
+            user=self.user1,
+            path=os.path.join(REPO_ROOT, self.user1.username, "test_repo"),
+        )
+
+    def test_create(self):
+        data = {
+            "branch_name": "test_branch",
+            "message": "test_create_branch",
+            "repository": self.repository.id,
+        }
+        response = self.client.post(
+            reverse("branch-list"),
+            data,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(
+                    self.repository.path, ".git", "refs", "heads", "test_branch"
+                )
+            )
+        )
+
+    def test_destory(self):
+        self.test_create()
+
+        data = {"branch_name": "test_branch", "message": "test_delete_branch"}
+        repo = Repo(self.repository.path)
+        repo.git.checkout("main")
+
+        response = self.client.delete(
+            reverse("branch-detail", args=[self.repository.id]),
+            data,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(
+            os.path.exists(
+                os.path.join(
+                    self.repository.path, ".git", "refs", "heads", "test_branch"
+                )
+            )
+        )
+
+    def test_update(self):
+        self.test_create()
+
+        data = {"branch_name": "main", "message": "test_update_branch"}
+
+        response = self.client.put(
+            reverse("branch-detail", args=[self.repository.id]),
+            data,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(Repo(self.repository.path).active_branch.name == "main")
+
+    def test_list(self):
+        self.test_create()
+
+        response = self.client.get(
+            reverse("branch-list") + f"?repository={self.repository.id}",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)

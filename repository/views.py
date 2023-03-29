@@ -273,61 +273,6 @@ class RepositoryViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["post"], url_path="branch", url_name="branch")
-    def create_branch(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
-        repository = Repository.objects.get(pk=pk)
-        branch_name = request.data.get("branch_name")
-        message = request.data.get("message")
-
-        if not branch_name or not message:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        repo = Repo(repository.path)
-        repo.git.checkout("-b", branch_name)
-        repo.index.add("*")
-        repo.index.commit(message)
-
-        return Response(status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=["delete"], url_path="branch", url_name="branch")
-    def delete_branch(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
-        repository = Repository.objects.get(pk=pk)
-        repo = Repo(repository.path)
-        branch_name = request.data.get("branch_name")
-
-        if branch_name is None or branch_name == "main":
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        repo.git.branch("-D", branch_name)
-
-        return Response(status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=["patch"], url_path="branch", url_name="branch")
-    def update_branch(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
-        repository = Repository.objects.get(pk=pk)
-        branch_name = request.data.get("branch_name")
-        message = request.data.get("message")
-
-        if branch_name is None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        repo = Repo(repository.path)
-        repo.git.checkout(branch_name)
-        repo.index.add("*")
-        repo.index.commit(message)
-
-        return Response(status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=["get"], url_path="branch", url_name="branch")
-    def list_branches(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
-        repository = Repository.objects.get(pk=pk)
-        repo = Repo(repository.path)
-
-        branch_list = repo.git.branch().split("\n")
-        branch_list = [branch.strip() for branch in branch_list]
-
-        return Response(branch_list, status=status.HTTP_200_OK)
-
     @action(
         detail=True, methods=["get"], url_path="workingtree", url_name="workingtree"
     )

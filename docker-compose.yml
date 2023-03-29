@@ -39,7 +39,7 @@ services:
       - db-connection
   web:
     image: chawanghyeon/bookhub:latest
-    command: gunicorn project.wsgi:application --workers=2 --bind 0.0.0.0:8000
+    command: gunicorn project.wsgi:application --workers=4 --bind 0.0.0.0:8000
     volumes:
       - .:/usr/src/app
     expose:

@@ -23,6 +23,7 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
+from branch.views import BranchViewSet
 from comment.views import CommentViewSet
 from fork.views import ForkViewSet
 from pullrequest.views import PullRequestViewSet
@@ -38,6 +39,7 @@ router.register(r"star", StarViewSet, basename="star")
 router.register(r"auth", AuthViewSet, basename="auth")
 router.register(r"pullrequest", PullRequestViewSet, basename="pullrequest")
 router.register(r"comment", CommentViewSet, basename="comment")
+router.register(r"branch", BranchViewSet, basename="branch")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

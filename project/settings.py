@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "pullrequest.apps.PullrequestConfig",
     "fork.apps.ForkConfig",
     "star.apps.StarConfig",
+    "branch.apps.BranchConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

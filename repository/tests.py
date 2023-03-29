@@ -222,69 +222,6 @@ class RepositoryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(os.path.exists(os.path.join(self.repository.path, "AFTER.txt")))
 
-    def test_create_branch(self):
-        data = {"branch_name": "test_branch", "message": "test_create_branch"}
-        response = self.client.post(
-            reverse("repository-branch", args=[self.repository.id]),
-            data,
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(
-            os.path.exists(
-                os.path.join(
-                    self.repository.path, ".git", "refs", "heads", "test_branch"
-                )
-            )
-        )
-
-    def test_destory_branch(self):
-        self.test_create_branch()
-
-        data = {"branch_name": "test_branch", "message": "test_delete_branch"}
-        repo = Repo(self.repository.path)
-        repo.git.checkout("main")
-
-        response = self.client.delete(
-            reverse("repository-branch", args=[self.repository.id]),
-            data,
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(
-            os.path.exists(
-                os.path.join(
-                    self.repository.path, ".git", "refs", "heads", "test_branch"
-                )
-            )
-        )
-
-    def test_update_branch(self):
-        self.test_create_branch()
-
-        data = {"branch_name": "main", "message": "test_update_branch"}
-
-        response = self.client.patch(
-            reverse("repository-branch", args=[self.repository.id]),
-            data,
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(Repo(self.repository.path).active_branch.name == "main")
-
-    def test_list_branches(self):
-        self.test_create_branch()
-
-        response = self.client.get(
-            reverse("repository-branch", args=[self.repository.id]),
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-
     def test_retrieve_working_tree(self):
         self.test_partial_update()
 
