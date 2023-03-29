@@ -17,6 +17,10 @@ root
 vscode
 .DS_Store
 .json
-bookhub.pem
+docker-compose.yml
 dockerfile
 requirements.txt
+nginx.conf
+nginx.crt
+nginx.key
+bookhub.pem
