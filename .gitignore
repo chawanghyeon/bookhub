@@ -20,6 +20,3 @@ vscode
 bookhub.pem
 dockerfile
 requirements.txt
-nginx.conf
-nginx.crt
-nginx.key
