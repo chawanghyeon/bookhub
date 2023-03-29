@@ -396,3 +396,20 @@ class RepositoryViewSet(viewsets.ModelViewSet):
         repo.git.reset("--hard", commit_hash)
 
         return Response(status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"], url_path="content", url_name="content")
+    def get_content_in_file(
+        self, request: HttpRequest, pk: Optional[str] = None
+    ) -> Response:
+        repository = Repository.objects.get(pk=pk)
+        file_path = request.query_params.get("file_path", None)
+
+        if file_path is None:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        file_path = os.path.join(repository.path, file_path)
+
+        with open(file_path, "r") as file:
+            file_content = file.read()
+
+        return Response(file_content, status=status.HTTP_200_OK)

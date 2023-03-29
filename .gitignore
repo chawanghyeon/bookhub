@@ -21,3 +21,5 @@ docker-compose.yml
 dockerfile
 requirements.txt
 nginx.conf
+nginx.crt
+nginx.key

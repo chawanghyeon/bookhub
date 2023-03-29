@@ -55,8 +55,9 @@ class AuthViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        serializer.save(password=make_password(request.data.get("password")))
-
+        serializer.save(
+            password=make_password(request.data.get("password")), is_active=True
+        )
         start_dir = os.path.join(REPO_ROOT, request.data.get("username"))
         os.mkdir(start_dir)
 

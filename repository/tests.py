@@ -323,3 +323,14 @@ class RepositoryViewSetTestCase(APITestCase):
             self.assertEqual(content, "")
         self.assertEqual(len(list(repo.iter_commits())), 1)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_content_in_file(self):
+        self.test_partial_update()
+
+        response = self.client.get(
+            reverse("repository-content", args=[self.repository.id])
+            + "?file_path=README.txt",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, "This is some new content.")
