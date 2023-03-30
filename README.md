@@ -69,7 +69,7 @@ Django restframework, restframework-simplejwt, GitPython, Docker, nginx, postgre
         
         ```python
         serializer.save(
-        		password=make_password(request.data.get("password")), is_active=True
+        	password=make_password(request.data.get("password")), is_active=True
         )
         ```
         
