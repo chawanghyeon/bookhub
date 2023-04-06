@@ -45,12 +45,10 @@ class BranchViewSetTestCase(APITestCase):
         data = {
             "branch_name": "test_branch",
             "message": "test_create_branch",
-            "repository": self.repository.id,
         }
         response = self.client.post(
-            reverse("branch-list"),
+            reverse("repository-branches", args=[self.repository.id]),
             data,
-            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -65,14 +63,12 @@ class BranchViewSetTestCase(APITestCase):
     def test_destory(self):
         self.test_create()
 
-        data = {"branch_name": "test_branch", "message": "test_delete_branch"}
+        data = {"message": "test_delete_branch"}
         repo = Repo(self.repository.path)
         repo.git.checkout("main")
 
         response = self.client.delete(
-            reverse("branch-detail", args=[self.repository.id]),
-            data,
-            format="json",
+            reverse("repository-branch", args=[self.repository.id, "test_branch"]), data
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -87,12 +83,10 @@ class BranchViewSetTestCase(APITestCase):
     def test_update(self):
         self.test_create()
 
-        data = {"branch_name": "main", "message": "test_update_branch"}
+        data = {"message": "test_update_branch"}
 
         response = self.client.put(
-            reverse("branch-detail", args=[self.repository.id]),
-            data,
-            format="json",
+            reverse("repository-branch", args=[self.repository.id, "main"]), data
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -102,7 +96,7 @@ class BranchViewSetTestCase(APITestCase):
         self.test_create()
 
         response = self.client.get(
-            reverse("branch-list") + f"?repository={self.repository.id}",
+            reverse("repository-branches", args=[self.repository.id])
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

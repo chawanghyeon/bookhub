@@ -38,7 +38,6 @@ router.register(r"forks", ForkViewSet, basename="fork")
 router.register(r"auth", AuthViewSet, basename="auth")
 router.register(r"pullrequests", PullRequestViewSet, basename="pullrequest")
 router.register(r"comments", CommentViewSet, basename="comment")
-router.register(r"branches", BranchViewSet, basename="branch")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -72,6 +71,20 @@ urlpatterns += [
         "users/<int:pk>/stars",
         StarViewSet.as_view({"get": "list"}),
         name="user-stars",
+    ),
+]
+
+# branches
+urlpatterns += [
+    path(
+        "repositories/<int:pk>/branches",
+        BranchViewSet.as_view({"get": "list", "post": "create"}),
+        name="repository-branches",
+    ),
+    path(
+        "repositories/<int:pk>/branches/<str:name>",
+        BranchViewSet.as_view({"put": "update", "delete": "destroy"}),
+        name="repository-branch",
     ),
 ]
 

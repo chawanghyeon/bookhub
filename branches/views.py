@@ -13,8 +13,8 @@ class BranchViewSet(viewsets.ModelViewSet):
     queryset = Repository.objects.all()
     serializer_class = RepositorySerializer
 
-    def create(self, request: HttpRequest) -> Response:
-        repository = Repository.objects.get(pk=request.data.get("repository"))
+    def create(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+        repository = Repository.objects.get(pk=pk)
         branch_name = request.data.get("branch_name")
         message = request.data.get("message")
 
@@ -28,35 +28,37 @@ class BranchViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_201_CREATED)
 
-    def destroy(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+    def destroy(
+        self, request: HttpRequest, pk: Optional[str] = None, name: Optional[str] = None
+    ) -> Response:
         repository = Repository.objects.get(pk=pk)
         repo = Repo(repository.path)
-        branch_name = request.data.get("branch_name")
 
-        if branch_name is None or branch_name == "main":
+        if name is None or name == "main":
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        repo.git.branch("-D", branch_name)
+        repo.git.branch("-D", name)
 
         return Response(status=status.HTTP_200_OK)
 
-    def update(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+    def update(
+        self, request: HttpRequest, pk: Optional[str] = None, name: Optional[str] = None
+    ) -> Response:
         repository = Repository.objects.get(pk=pk)
-        branch_name = request.data.get("branch_name")
         message = request.data.get("message")
 
-        if branch_name is None:
+        if name is None:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         repo = Repo(repository.path)
-        repo.git.checkout(branch_name)
+        repo.git.checkout(name)
         repo.index.add("*")
         repo.index.commit(message)
 
         return Response(status=status.HTTP_200_OK)
 
     def list(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
-        repository = Repository.objects.get(pk=request.query_params.get("repository"))
+        repository = Repository.objects.get(pk=pk)
         repo = Repo(repository.path)
 
         branch_list = repo.git.branch().split("\n")
