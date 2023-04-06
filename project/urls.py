@@ -32,14 +32,13 @@ from stars.views import StarViewSet
 from users.views import AuthViewSet, UserViewSet
 
 router = DefaultRouter()
-router.register(r"user", UserViewSet, basename="user")
-router.register(r"repository", RepositoryViewSet, basename="repository")
-router.register(r"fork", ForkViewSet, basename="fork")
-router.register(r"star", StarViewSet, basename="star")
+router.register(r"users", UserViewSet, basename="user")
+router.register(r"repositories", RepositoryViewSet, basename="repository")
+router.register(r"forks", ForkViewSet, basename="fork")
 router.register(r"auth", AuthViewSet, basename="auth")
-router.register(r"pullrequest", PullRequestViewSet, basename="pullrequest")
-router.register(r"comment", CommentViewSet, basename="comment")
-router.register(r"branch", BranchViewSet, basename="branch")
+router.register(r"pullrequests", PullRequestViewSet, basename="pullrequest")
+router.register(r"comments", CommentViewSet, basename="comment")
+router.register(r"branches", BranchViewSet, basename="branch")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
