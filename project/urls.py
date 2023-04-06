@@ -23,13 +23,13 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
-from branch.views import BranchViewSet
-from comment.views import CommentViewSet
-from fork.views import ForkViewSet
-from pullrequest.views import PullRequestViewSet
-from repository.views import RepositoryViewSet
-from star.views import StarViewSet
-from user.views import AuthViewSet, UserViewSet
+from branches.views import BranchViewSet
+from comments.views import CommentViewSet
+from forks.views import ForkViewSet
+from pullrequests.views import PullRequestViewSet
+from repositories.views import RepositoryViewSet
+from stars.views import StarViewSet
+from users.views import AuthViewSet, UserViewSet
 
 router = DefaultRouter()
 router.register(r"user", UserViewSet, basename="user")

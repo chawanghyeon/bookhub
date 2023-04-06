@@ -38,13 +38,13 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
-    "user.apps.UserConfig",
-    "repository.apps.RepositoryConfig",
-    "comment.apps.CommentConfig",
-    "pullrequest.apps.PullrequestConfig",
-    "fork.apps.ForkConfig",
-    "star.apps.StarConfig",
-    "branch.apps.BranchConfig",
+    "users.apps.UsersConfig",
+    "repositories.apps.RepositoriesConfig",
+    "comments.apps.CommentsConfig",
+    "pullrequests.apps.PullrequestsConfig",
+    "forks.apps.ForksConfig",
+    "stars.apps.StarsConfig",
+    "branches.apps.BranchesConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -173,7 +173,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
-    "TOKEN_USER_CLASS": "user.models.User",
+    "TOKEN_USER_CLASS": "users.models.User",
 }
 
 CORS_ALLOWED_CREDENTIALS = True
@@ -181,7 +181,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 REST_USE_JWT = True
 
-AUTH_USER_MODEL = "user.User"
+AUTH_USER_MODEL = "users.User"
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
