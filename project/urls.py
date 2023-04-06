@@ -44,6 +44,10 @@ router.register(r"branch", BranchViewSet, basename="branch")
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include(router.urls)),
+]
+
+# repositories
+urlpatterns += [
     path(
         "repositories/<int:pk>/branch/",
         RepositoryViewSet.as_view(
@@ -55,6 +59,20 @@ urlpatterns = [
             }
         ),
         name="repository-branch",
+    ),
+]
+
+# stars
+urlpatterns += [
+    path(
+        "repositories/<int:pk>/stars",
+        StarViewSet.as_view({"post": "create", "delete": "destroy"}),
+        name="repository-stars",
+    ),
+    path(
+        "users/<int:pk>/stars",
+        StarViewSet.as_view({"get": "list"}),
+        name="user-stars",
     ),
 ]
 

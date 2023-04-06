@@ -26,7 +26,7 @@ class StarViewSetTestCase(APITestCase):
 
     def test_create_star(self):
         response = self.client.post(
-            reverse("star-list"), {"repository": self.repository.id}
+            reverse("repository-stars", args=[self.repository.id])
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(
@@ -40,7 +40,9 @@ class StarViewSetTestCase(APITestCase):
         self.repository.star_count = 1
         self.repository.save()
 
-        response = self.client.delete(reverse("star-detail", args=[self.repository.id]))
+        response = self.client.delete(
+            reverse("repository-stars", args=[self.repository.id])
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(
             Star.objects.filter(user=self.user1, repository=self.repository).exists()
@@ -50,6 +52,6 @@ class StarViewSetTestCase(APITestCase):
 
     def test_retrieve_stars(self):
         Star.objects.create(user=self.user1, repository=self.repository)
-        response = self.client.get(reverse("star-detail", args=[self.user1.id]))
+        response = self.client.get(reverse("user-stars", args=[self.user1.id]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)

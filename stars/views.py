@@ -18,15 +18,12 @@ class StarViewSet(viewsets.ModelViewSet):
     serializer_class = StarSerializer
 
     @transaction.atomic
-    def create(self, request: HttpRequest) -> Response:
-        repository_id = request.data.get("repository")
+    def create(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
         serializer = StarSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(repository_id=repository_id, user_id=request.user.id)
+        serializer.save(repository_id=pk, user_id=request.user.id)
 
-        Repository.objects.filter(id=repository_id).update(
-            star_count=F("star_count") + 1
-        )
+        Repository.objects.filter(id=pk).update(star_count=F("star_count") + 1)
 
         return Response(status=status.HTTP_201_CREATED)
 
@@ -37,7 +34,7 @@ class StarViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_200_OK)
 
-    def retrieve(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+    def list(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
         user_id = request.query_params.get("user", pk) or request.user.id
         pagenator = CursorPagination()
 
