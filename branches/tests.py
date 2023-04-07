@@ -102,3 +102,32 @@ class BranchViewSetTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
+
+    # no auth
+    def test_create_no_auth(self):
+        self.client.credentials()
+        response = self.client.post(
+            reverse("repositories-branches", args=[self.repository.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_destory_no_auth(self):
+        self.client.credentials()
+        response = self.client.delete(
+            reverse("repositories-branch", args=[self.repository.id, "test_branch"])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_no_auth(self):
+        self.client.credentials()
+        response = self.client.put(
+            reverse("repositories-branch", args=[self.repository.id, "main"])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_list_no_auth(self):
+        self.client.credentials()
+        response = self.client.get(
+            reverse("repositories-branches", args=[self.repository.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
