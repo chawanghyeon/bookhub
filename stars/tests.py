@@ -55,3 +55,23 @@ class StarViewSetTestCase(APITestCase):
         response = self.client.get(reverse("users-stars", args=[self.user1.id]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
+
+    # no_auth
+    def test_create_star_no_auth(self):
+        self.client.credentials()
+        response = self.client.post(
+            reverse("repositories-stars", args=[self.repository.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_destroy_star_no_auth(self):
+        self.client.credentials()
+        response = self.client.delete(
+            reverse("repositories-stars", args=[self.repository.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_retrieve_stars_no_auth(self):
+        self.client.credentials()
+        response = self.client.get(reverse("users-stars", args=[self.user1.id]))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
