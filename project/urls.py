@@ -36,7 +36,9 @@ router.register(r"users", UserViewSet, basename="user")
 router.register(r"repositories", RepositoryViewSet, basename="repository")
 router.register(r"forks", ForkViewSet, basename="fork")
 router.register(r"auth", AuthViewSet, basename="auth")
-router.register(r"pullrequests", PullRequestViewSet, basename="pullrequest")
+router.register(
+    r"repositories/<int:pk>/pullrequests", PullRequestViewSet, basename="pullrequests"
+)
 router.register(r"repositories/<int:pk>/comments", CommentViewSet, basename="comment")
 
 urlpatterns = [

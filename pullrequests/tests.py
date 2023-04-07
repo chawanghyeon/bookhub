@@ -89,20 +89,20 @@ class PullRequestViewSetTestCase(APITestCase):
         repo.index.add(["*"])
         repo.index.commit("test commit")
 
-        response = self.client.post(reverse("pullrequest-list"), self.data)
+        response = self.client.post(reverse("pullrequests-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(PullRequest.objects.first().title, "test pull request")
 
     def test_create_pull_request_without_source_branch(self):
         self.data["source_branch"] = ""
-        response = self.client.post(reverse("pullrequest-list"), self.data)
+        response = self.client.post(reverse("pullrequests-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_destory_pull_request(self):
-        response = self.client.post(reverse("pullrequest-list"), self.data)
+        response = self.client.post(reverse("pullrequests-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self.client.delete(reverse("pullrequest-detail", args=[1]))
+        response = self.client.delete(reverse("pullrequests-detail", args=[1]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(PullRequest.objects.count(), 0)
 
@@ -115,12 +115,12 @@ class PullRequestViewSetTestCase(APITestCase):
         repo.index.add(["*"])
         repo.index.commit("test commit")
 
-        response = self.client.post(reverse("pullrequest-list"), self.data)
+        response = self.client.post(reverse("pullrequests-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(PullRequest.objects.first().title, "test pull request")
 
-        response = self.client.post(reverse("pullrequest-check", args=[1]), self.data)
+        response = self.client.post(reverse("pullrequests-check", args=[1]), self.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue("test" in str(response.data))
 
@@ -135,27 +135,27 @@ class PullRequestViewSetTestCase(APITestCase):
         repo.index.add(["*"])
         repo.index.commit("test commit")
 
-        response = self.client.post(reverse("pullrequest-list"), self.data)
+        response = self.client.post(reverse("pullrequests-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(PullRequest.objects.first().title, "test pull request")
 
-        response = self.client.post(reverse("pullrequest-approve", args=[1]))
+        response = self.client.post(reverse("pullrequests-approve", args=[1]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(PullRequest.objects.first().status, "merged")
         with open(os.path.join(self.repository.path, "README.txt"), "r") as f:
             self.assertEqual(f.read(), "test")
 
     def test_approve_pull_request_with_another_user(self):
-        response = self.client.post(reverse("pullrequest-list"), self.data)
+        response = self.client.post(reverse("pullrequests-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self.client.post(reverse("pullrequest-approve", args=[1]), data={})
+        response = self.client.post(reverse("pullrequests-approve", args=[1]), data={})
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_approve_pull_request_with_conflict(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
 
-        response = self.client.post(reverse("pullrequest-list"), self.data)
+        response = self.client.post(reverse("pullrequests-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         path = self.repository2.path
@@ -172,22 +172,22 @@ class PullRequestViewSetTestCase(APITestCase):
         reop.index.add(["*"])
         reop.index.commit("test commit")
 
-        response = self.client.post(reverse("pullrequest-approve", args=[1]), data={})
+        response = self.client.post(reverse("pullrequests-approve", args=[1]), data={})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_reject_pull_request(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
 
-        response = self.client.post(reverse("pullrequest-list"), self.data)
+        response = self.client.post(reverse("pullrequests-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self.client.post(reverse("pullrequest-reject", args=[1]), data={})
+        response = self.client.post(reverse("pullrequests-reject", args=[1]), data={})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(PullRequest.objects.first().status, "closed")
 
     def test_resolve_conflict(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
 
-        response = self.client.post(reverse("pullrequest-list"), self.data)
+        response = self.client.post(reverse("pullrequests-list"), self.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         with open(os.path.join(self.repository2.path, "README.txt"), "w") as f:
@@ -202,11 +202,11 @@ class PullRequestViewSetTestCase(APITestCase):
         reop.index.add(["*"])
         reop.index.commit("test commit")
 
-        response = self.client.post(reverse("pullrequest-approve", args=[1]), data={})
+        response = self.client.post(reverse("pullrequests-approve", args=[1]), data={})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         response = self.client.post(
-            reverse("pullrequest-resolve", args=[1]),
+            reverse("pullrequests-resolve", args=[1]),
             data={"choice": "REMOTE", "filename": "README.txt"},
         )
         with open(os.path.join(self.repository.path, "README.txt"), "r") as f:
