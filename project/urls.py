@@ -32,7 +32,7 @@ from stars.views import StarViewSet
 from users.views import AuthViewSet, UserViewSet
 
 router = DefaultRouter()
-router.register(r"users", UserViewSet, basename="user")
+router.register(r"users", UserViewSet, basename="users")
 router.register(r"repositories", RepositoryViewSet, basename="repository")
 router.register(r"forks", ForkViewSet, basename="fork")
 router.register(r"auth", AuthViewSet, basename="auth")

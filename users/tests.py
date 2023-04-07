@@ -50,7 +50,7 @@ class UserViewSetTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user1_token}")
 
     def test_retrieve_user(self):
-        response = self.client.get(reverse("user-detail", args=[self.user1.id]))
+        response = self.client.get(reverse("users-detail", args=[self.user1.id]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         serializer = UserSerializer(self.user1)
@@ -58,7 +58,8 @@ class UserViewSetTestCase(APITestCase):
 
     def test_destroy_user(self):
         response = self.client.delete(
-            reverse("user-detail", args=[self.user1.id]), {"password": "user1_password"}
+            reverse("users-detail", args=[self.user1.id]),
+            {"password": "user1_password"},
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -66,7 +67,7 @@ class UserViewSetTestCase(APITestCase):
 
     def test_destroy_user_wrong_password(self):
         response = self.client.delete(
-            reverse("user-detail", args=[self.user1.id]), {"password": "wrongpassword"}
+            reverse("users-detail", args=[self.user1.id]), {"password": "wrongpassword"}
         )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
