@@ -14,7 +14,7 @@ from project.settings import REPO_ROOT
 from repositories.models import Repository
 
 
-class ForkViewSet(viewsets.ModelViewSet):
+class ForkViewSet(viewsets.ViewSet):
     queryset = Fork.objects.all()
     serializer_class = ForkSerializer
 

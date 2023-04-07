@@ -13,7 +13,7 @@ from stars.models import Star
 from stars.serializers import StarSerializer
 
 
-class StarViewSet(viewsets.ModelViewSet):
+class StarViewSet(viewsets.ViewSet):
     queryset = Star.objects.all()
     serializer_class = StarSerializer
 

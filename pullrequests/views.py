@@ -11,7 +11,7 @@ from pullrequests.models import PullRequest
 from pullrequests.serializers import PullRequestSerializer
 
 
-class PullRequestViewSet(viewsets.ModelViewSet):
+class PullRequestViewSet(viewsets.ViewSet):
     queryset = PullRequest.objects.all()
     serializer_class = PullRequestSerializer
 

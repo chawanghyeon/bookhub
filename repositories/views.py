@@ -16,7 +16,7 @@ from repositories.models import Repository
 from repositories.serializers import RepositorySerializer
 
 
-class RepositoryViewSet(viewsets.ModelViewSet):
+class RepositoryViewSet(viewsets.ViewSet):
     queryset = Repository.objects.all()
     serializer_class = RepositorySerializer
 

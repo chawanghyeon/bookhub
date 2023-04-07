@@ -16,7 +16,7 @@ from users.models import User
 from users.serializers import UserSerializer
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(viewsets.ViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -45,7 +45,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
-class AuthViewSet(viewsets.ModelViewSet):
+class AuthViewSet(viewsets.ViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = tuple()

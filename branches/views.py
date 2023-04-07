@@ -9,7 +9,7 @@ from repositories.models import Repository
 from repositories.serializers import RepositorySerializer
 
 
-class BranchViewSet(viewsets.ModelViewSet):
+class BranchViewSet(viewsets.ViewSet):
     queryset = Repository.objects.all()
     serializer_class = RepositorySerializer
 
