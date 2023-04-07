@@ -91,3 +91,19 @@ class CommentViewSetTestCase(APITestCase):
         response = self.client.delete(reverse("comments-detail", args=[1]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Comment.objects.count(), 0)
+
+    # no_auth
+    def test_create_comment_no_auth(self):
+        self.client.credentials()
+        response = self.client.post(reverse("comments-list"))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_partial_update_comment_no_auth(self):
+        self.client.credentials()
+        response = self.client.patch(reverse("comments-detail", args=[1]))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_comment_no_auth(self):
+        self.client.credentials()
+        response = self.client.delete(reverse("comments-detail", args=[1]))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
