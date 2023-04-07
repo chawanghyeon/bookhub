@@ -34,7 +34,6 @@ from users.views import AuthViewSet, UserViewSet
 router = DefaultRouter()
 router.register(r"users", UserViewSet, basename="users")
 router.register(r"repositories", RepositoryViewSet, basename="repositories")
-router.register(r"forks", ForkViewSet, basename="fork")
 router.register(r"auth", AuthViewSet, basename="auth")
 router.register(
     r"repositories/<int:pk>/pullrequests", PullRequestViewSet, basename="pullrequests"
@@ -95,7 +94,7 @@ urlpatterns += [
     path(
         "repositories/<int:pk>/forks",
         ForkViewSet.as_view({"post": "create", "delete": "destroy"}),
-        name="repository-forks",
+        name="repositories-forks",
     ),
 ]
 
