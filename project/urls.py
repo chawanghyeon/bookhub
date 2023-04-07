@@ -37,7 +37,7 @@ router.register(r"repositories", RepositoryViewSet, basename="repository")
 router.register(r"forks", ForkViewSet, basename="fork")
 router.register(r"auth", AuthViewSet, basename="auth")
 router.register(r"pullrequests", PullRequestViewSet, basename="pullrequest")
-router.register(r"comments", CommentViewSet, basename="comment")
+router.register(r"repositories/<int:pk>/comments", CommentViewSet, basename="comment")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
