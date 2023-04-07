@@ -212,3 +212,39 @@ class PullRequestViewSetTestCase(APITestCase):
         with open(os.path.join(self.repository.path, "README.txt"), "r") as f:
             self.assertEqual(f.read(), "test")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    # no_auth
+    def test_get_pull_request_list_no_auth(self):
+        self.client.credentials()
+        response = self.client.get(reverse("pullrequests-list"))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_get_pull_request_detail_no_auth(self):
+        self.client.credentials()
+        response = self.client.get(reverse("pullrequests-detail", args=[1]))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_pull_request_no_auth(self):
+        self.client.credentials()
+        response = self.client.post(reverse("pullrequests-list"))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_check_pull_request_no_auth(self):
+        self.client.credentials()
+        response = self.client.post(reverse("pullrequests-check", args=[1]))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_approve_pull_request_no_auth(self):
+        self.client.credentials()
+        response = self.client.post(reverse("pullrequests-approve", args=[1]))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_reject_pull_request_no_auth(self):
+        self.client.credentials()
+        response = self.client.post(reverse("pullrequests-reject", args=[1]))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_resolve_conflict_no_auth(self):
+        self.client.credentials()
+        response = self.client.post(reverse("pullrequests-resolve", args=[1]))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
