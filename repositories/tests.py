@@ -236,7 +236,7 @@ class RepositoryViewSetTestCase(APITestCase):
         self.test_partial_update()
 
         response = self.client.get(
-            reverse("repositories-commit", args=[self.repository.id]),
+            reverse("repositories-commits", args=[self.repository.id]),
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -305,7 +305,7 @@ class RepositoryViewSetTestCase(APITestCase):
     def test_list_commits_no_auth(self):
         self.client.credentials()
         response = self.client.get(
-            reverse("repositories-commit", args=[self.repository.id])
+            reverse("repositories-commits", args=[self.repository.id])
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 

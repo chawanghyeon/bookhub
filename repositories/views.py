@@ -310,7 +310,7 @@ class RepositoryViewSet(viewsets.ModelViewSet):
 
         return Response(working_tree, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["get"], url_path="commit", url_name="commit")
+    @action(detail=True, methods=["get"], url_path="commits", url_name="commits")
     def list_commits(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
         repository = Repository.objects.get(pk=pk)
         repo = Repo(repository.path)
