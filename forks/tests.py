@@ -45,8 +45,7 @@ class ForkViewSetTestCase(APITestCase):
 
     def test_create(self):
         self.client.force_authenticate(user=self.user2)
-        data = {"repository": self.repo.id}
-        response = self.client.post(reverse("fork-list"), data)
+        response = self.client.post(reverse("repository-forks", args=[self.repo.id]))
         fork = Fork.objects.get(user=self.user2, source_repository=self.repo)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(self.repo.source_fork.count(), 1)
@@ -65,8 +64,7 @@ class ForkViewSetTestCase(APITestCase):
 
     def test_delete(self):
         self.client.force_authenticate(user=self.user2)
-        data = {"repository": self.repo.id}
-        response = self.client.post(reverse("fork-list"), data)
+        response = self.client.post(reverse("repository-forks", args=[self.repo.id]))
 
         response = self.client.delete(reverse("fork-detail", args=[self.repo.id]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)

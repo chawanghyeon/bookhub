@@ -88,6 +88,15 @@ urlpatterns += [
     ),
 ]
 
+# forks
+urlpatterns += [
+    path(
+        "repositories/<int:pk>/forks",
+        ForkViewSet.as_view({"post": "create", "delete": "destroy"}),
+        name="repository-forks",
+    ),
+]
+
 # swagger
 urlpatterns += [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

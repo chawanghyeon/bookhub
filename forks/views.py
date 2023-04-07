@@ -19,8 +19,8 @@ class ForkViewSet(viewsets.ModelViewSet):
     serializer_class = ForkSerializer
 
     @transaction.atomic
-    def create(self, request: HttpRequest) -> Response:
-        source_repository = Repository.objects.get(pk=request.data["repository"])
+    def create(self, request: HttpRequest, pk: Optional[str] = None) -> Response:
+        source_repository = Repository.objects.get(pk=pk)
 
         source_dir = source_repository.path
         target_dir = os.path.join(
