@@ -271,3 +271,61 @@ class RepositoryViewSetTestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, "This is some new content.")
+
+    # no_auth
+    def test_create_repository_no_auth(self):
+        self.client.credentials()
+        response = self.client.post(reverse("repositories-list"))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_list_repositories_no_auth(self):
+        self.client.credentials()
+        response = self.client.get(reverse("repositories-list"))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_list_repositories_by_tag_no_auth(self):
+        self.client.credentials()
+        response = self.client.get(reverse("repositories-tag"))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_retrieve_repository_no_auth(self):
+        self.client.credentials()
+        response = self.client.get(
+            reverse("repositories-detail", args=[self.repository.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_retrieve_working_tree_no_auth(self):
+        self.client.credentials()
+        response = self.client.get(
+            reverse("repositories-workingtree", args=[self.repository.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_list_commits_no_auth(self):
+        self.client.credentials()
+        response = self.client.get(
+            reverse("repositories-commit", args=[self.repository.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_get_content_in_file_no_auth(self):
+        self.client.credentials()
+        response = self.client.get(
+            reverse("repositories-content", args=[self.repository.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_name_no_auth(self):
+        self.client.credentials()
+        response = self.client.patch(
+            reverse("repositories-rename", args=[self.repository.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_rollback_to_commit_no_auth(self):
+        self.client.credentials()
+        response = self.client.put(
+            reverse("repositories-rollback", args=[self.repository.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
