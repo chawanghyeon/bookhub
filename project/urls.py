@@ -66,12 +66,12 @@ urlpatterns += [
     path(
         "repositories/<int:pk>/stars",
         StarViewSet.as_view({"post": "create", "delete": "destroy"}),
-        name="repository-stars",
+        name="repositories-stars",
     ),
     path(
         "users/<int:pk>/stars",
         StarViewSet.as_view({"get": "list"}),
-        name="user-stars",
+        name="users-stars",
     ),
 ]
 
