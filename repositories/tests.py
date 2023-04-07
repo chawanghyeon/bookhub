@@ -75,7 +75,7 @@ class RepositoryViewSetTestCase(APITestCase):
             shutil.rmtree(os.path.join(self.repository.path, "test_repo"))
 
         response = self.client.post(
-            reverse("repository-list"),
+            reverse("repositories-list"),
             data={"name": "test_create_repo"},
         )
         self.assertEqual(response.status_code, 201)
@@ -88,7 +88,7 @@ class RepositoryViewSetTestCase(APITestCase):
 
     def test_retrieve_repository(self):
         response = self.client.get(
-            reverse("repository-detail", args=[self.repository2.id]),
+            reverse("repositories-detail", args=[self.repository2.id]),
         )
 
         self.assertTrue(response.data["tree"])
@@ -102,7 +102,7 @@ class RepositoryViewSetTestCase(APITestCase):
         repo.index.commit("Updated README.txt")
 
         response = self.client.get(
-            reverse("repository-detail", args=[self.repository2.id]),
+            reverse("repositories-detail", args=[self.repository2.id]),
         )
         self.assertTrue(response.data["pullrequest"])
         self.assertEqual(response.status_code, 200)
@@ -117,7 +117,7 @@ class RepositoryViewSetTestCase(APITestCase):
             "path": f"{self.user1.username}/{self.repository.name}/{new_file.name}",
         }
         response = self.client.patch(
-            reverse("repository-file", args=[self.repository.id]),
+            reverse("repositories-file", args=[self.repository.id]),
             data,
             format="multipart",
         )
@@ -140,20 +140,20 @@ class RepositoryViewSetTestCase(APITestCase):
             "message": "Updated README.txt",
         }
         response = self.client.patch(
-            reverse("repository-structure", args=[self.repository.id]),
+            reverse("repositories-structure", args=[self.repository.id]),
             data,
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self.client.get(
-            reverse("repository-detail", args=[self.repository.id]),
+            reverse("repositories-detail", args=[self.repository.id]),
         )
         self.assertEqual(response.data["tree"], data["structure"])
 
     def test_destroy_repository(self):
         response = self.client.delete(
-            reverse("repository-detail", args=[self.repository.id]),
+            reverse("repositories-detail", args=[self.repository.id]),
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -174,7 +174,7 @@ class RepositoryViewSetTestCase(APITestCase):
         )
 
         response = self.client.get(
-            reverse("repository-list"),
+            reverse("repositories-list"),
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -200,7 +200,7 @@ class RepositoryViewSetTestCase(APITestCase):
             repository.tags.add(tag1)
 
         response = self.client.get(
-            reverse("repository-tag"),
+            reverse("repositories-tag"),
             data={"tag": "test1"},
         )
 
@@ -214,7 +214,7 @@ class RepositoryViewSetTestCase(APITestCase):
             "message": "test_update",
         }
         response = self.client.patch(
-            reverse("repository-rename", args=[self.repository.id]),
+            reverse("repositories-rename", args=[self.repository.id]),
             data,
             format="json",
         )
@@ -226,7 +226,7 @@ class RepositoryViewSetTestCase(APITestCase):
         self.test_partial_update()
 
         response = self.client.get(
-            reverse("repository-workingtree", args=[self.repository.id])
+            reverse("repositories-workingtree", args=[self.repository.id])
             + f"?commit_hash={Repo(self.repository.path).head.commit.hexsha}",
         )
 
@@ -236,7 +236,7 @@ class RepositoryViewSetTestCase(APITestCase):
         self.test_partial_update()
 
         response = self.client.get(
-            reverse("repository-commit", args=[self.repository.id]),
+            reverse("repositories-commit", args=[self.repository.id]),
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -250,7 +250,7 @@ class RepositoryViewSetTestCase(APITestCase):
 
         data = {"commit_hash": commit_hash, "message": "test_rollback_to_commit"}
         response = self.client.put(
-            reverse("repository-rollback", args=[self.repository.id]),
+            reverse("repositories-rollback", args=[self.repository.id]),
             data,
             format="json",
         )
@@ -265,7 +265,7 @@ class RepositoryViewSetTestCase(APITestCase):
         self.test_partial_update()
 
         response = self.client.get(
-            reverse("repository-content", args=[self.repository.id])
+            reverse("repositories-content", args=[self.repository.id])
             + "?file_path=README.txt",
         )
 
