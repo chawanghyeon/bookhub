@@ -120,7 +120,7 @@ class PullRequestViewSetTestCase(APITestCase):
         self.assertEqual(PullRequest.objects.count(), 1)
         self.assertEqual(PullRequest.objects.first().title, "test pull request")
 
-        response = self.client.post(reverse("pullrequests-check", args=[1]), self.data)
+        response = self.client.get(reverse("pullrequests-check", args=[1]), self.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue("test" in str(response.data))
 

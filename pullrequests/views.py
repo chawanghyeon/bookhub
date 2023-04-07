@@ -28,7 +28,7 @@ class PullRequestViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["post"], url_path="check", url_name="check")
+    @action(detail=True, methods=["get"], url_path="check", url_name="check")
     def check_difference(
         self, request: HttpRequest, pk: Optional[str] = None
     ) -> Response:
