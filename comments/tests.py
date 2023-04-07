@@ -43,7 +43,7 @@ class CommentViewSetTestCase(APITestCase):
 
     def test_create_comment(self):
         response = self.client.post(
-            reverse("comment-list"),
+            reverse("comments-list"),
             {
                 "text": "test comment",
                 "repository": self.repo.id,
@@ -56,7 +56,7 @@ class CommentViewSetTestCase(APITestCase):
 
     def test_create_comment_without_commit(self):
         response = self.client.post(
-            reverse("comment-list"),
+            reverse("comments-list"),
             {
                 "text": "test comment",
                 "repository": self.repo.id,
@@ -68,7 +68,7 @@ class CommentViewSetTestCase(APITestCase):
     def test_partial_update_comment(self):
         self.test_create_comment()
         response = self.client.patch(
-            reverse("comment-detail", args=[1]),
+            reverse("comments-detail", args=[1]),
             {
                 "text": "updated comment",
             },
@@ -80,7 +80,7 @@ class CommentViewSetTestCase(APITestCase):
     def test_partial_update_comment_without_text(self):
         self.test_create_comment()
         response = self.client.patch(
-            reverse("comment-detail", args=[1]),
+            reverse("comments-detail", args=[1]),
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Comment.objects.count(), 1)
@@ -88,6 +88,6 @@ class CommentViewSetTestCase(APITestCase):
 
     def test_delete_comment(self):
         self.test_create_comment()
-        response = self.client.delete(reverse("comment-detail", args=[1]))
+        response = self.client.delete(reverse("comments-detail", args=[1]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Comment.objects.count(), 0)
