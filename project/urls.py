@@ -80,12 +80,12 @@ urlpatterns += [
     path(
         "repositories/<int:pk>/branches",
         BranchViewSet.as_view({"get": "list", "post": "create"}),
-        name="repository-branches",
+        name="repositories-branches",
     ),
     path(
         "repositories/<int:pk>/branches/<str:name>",
         BranchViewSet.as_view({"put": "update", "delete": "destroy"}),
-        name="repository-branch",
+        name="repositories-branch",
     ),
 ]
 

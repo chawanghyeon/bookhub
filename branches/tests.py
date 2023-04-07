@@ -47,7 +47,7 @@ class BranchViewSetTestCase(APITestCase):
             "message": "test_create_branch",
         }
         response = self.client.post(
-            reverse("repository-branches", args=[self.repository.id]),
+            reverse("repositories-branches", args=[self.repository.id]),
             data,
         )
 
@@ -68,7 +68,8 @@ class BranchViewSetTestCase(APITestCase):
         repo.git.checkout("main")
 
         response = self.client.delete(
-            reverse("repository-branch", args=[self.repository.id, "test_branch"]), data
+            reverse("repositories-branch", args=[self.repository.id, "test_branch"]),
+            data,
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -86,7 +87,7 @@ class BranchViewSetTestCase(APITestCase):
         data = {"message": "test_update_branch"}
 
         response = self.client.put(
-            reverse("repository-branch", args=[self.repository.id, "main"]), data
+            reverse("repositories-branch", args=[self.repository.id, "main"]), data
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -96,7 +97,7 @@ class BranchViewSetTestCase(APITestCase):
         self.test_create()
 
         response = self.client.get(
-            reverse("repository-branches", args=[self.repository.id])
+            reverse("repositories-branches", args=[self.repository.id])
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
