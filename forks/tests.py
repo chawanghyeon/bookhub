@@ -74,3 +74,14 @@ class ForkViewSetTestCase(APITestCase):
         self.assertFalse(
             os.path.exists(os.path.join(REPO_ROOT, self.user2.username, "test_repo"))
         )
+
+    # no_auth
+    def test_create_no_auth(self):
+        response = self.client.post(reverse("repositories-forks", args=[self.repo.id]))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_no_auth(self):
+        response = self.client.delete(
+            reverse("repositories-forks", args=[self.repo.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
