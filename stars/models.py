@@ -11,8 +11,5 @@ class Star(models.Model):
         Repository, on_delete=models.CASCADE, related_name="star"
     )
 
-    def __unicode__(self):
-        return self.user.first_name + " " + self.repository.name
-
     def __str__(self):
         return self.user.first_name + " " + self.repository.name

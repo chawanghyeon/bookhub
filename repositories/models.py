@@ -7,9 +7,6 @@ class Tag(models.Model):
     id = models.BigAutoField(primary_key=True, unique=True)
     name = models.CharField(max_length=100, unique=True)
 
-    def __unicode__(self):
-        return self.name
-
     def __str__(self):
         return self.name
 
@@ -31,9 +28,6 @@ class Repository(models.Model):
     fork_count = models.IntegerField(default=0)
     private = models.BooleanField(default=False)
     fork = models.BooleanField(default=False)
-
-    def __unicode__(self):
-        return self.name
 
     def __str__(self):
         return self.name
