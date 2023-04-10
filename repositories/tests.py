@@ -184,19 +184,13 @@ class RepositoryViewSetTestCase(APITestCase):
     def test_list_repositories_by_tag(self):
         tag1 = Tag.objects.create(name="test1")
 
-        repositories = Repository.objects.bulk_create(
-            [
-                Repository(
-                    name=f"test_repo{i}",
-                    user=self.user1,
-                    path=f"temp{i}",
-                    star_count=i,
-                )
-                for i in range(10)
-            ]
-        )
-
-        for repository in repositories:
+        for i in range(10):
+            repository = Repository.objects.create(
+                name=f"test_repo{i}",
+                user=self.user1,
+                path=f"temp{i}",
+                star_count=i,
+            )
             repository.tags.add(tag1)
 
         response = self.client.get(
